@@ -12,11 +12,11 @@ import (
 // represents the int state of bloom filter that is the slice of integers
 // containing the number of consecutive 1's and the negative value of number
 // of consecutive 0's. Field indices the slice of integers containing the
-// indices where the bloom filter changes bits. Filed mT represents
+// indices where the bloom filter changes bits. Filed MT represents
 // merkle tree build from element combination of two slices of integers.
 type BloomTree struct {
 	state [][2]int
-	mT    *merkletree.MerkleTree
+	MT    *merkletree.MerkleTree
 }
 
 // accept as input bloom filter and returns the slices of integers
@@ -76,7 +76,7 @@ func NewBloomTree(b *bitset.BitSet) *BloomTree {
 	mT := merkleTree(elementsOfTree(state))
 
 	return &BloomTree{
-		mT:    mT,
+		MT:    mT,
 		state: state,
 	}
 }

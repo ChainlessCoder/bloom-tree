@@ -29,7 +29,7 @@ func TestVerifyPresence(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	proven, err := merkletree.VerifyMultiProof(data, false, proof1, bT.mT.Root())
+	proven, err := merkletree.VerifyMultiProof(data, false, proof1, bT.MT.Root())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func TestVerifyPresence(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	proven, err = merkletree.VerifyMultiProof(data, false, proof2, bT.mT.Root())
+	proven, err = merkletree.VerifyMultiProof(data, false, proof2, bT.MT.Root())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +64,7 @@ func TestVerifyPresence(t *testing.T) {
 
 	falseProof.Indices[0] = 1
 
-	proven, err = merkletree.VerifyMultiProof(data, false, falseProof, bT.mT.Root())
+	proven, err = merkletree.VerifyMultiProof(data, false, falseProof, bT.MT.Root())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func TestVerifyAbsence(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	proven, err := merkletree.VerifyMultiProof(data, false, proof1, bT.mT.Root())
+	proven, err := merkletree.VerifyMultiProof(data, false, proof1, bT.MT.Root())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestVerifyAbsence(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	proven, err = merkletree.VerifyMultiProof(data, false, proof2, bT.mT.Root())
+	proven, err = merkletree.VerifyMultiProof(data, false, proof2, bT.MT.Root())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +130,7 @@ func TestVerifyAbsence(t *testing.T) {
 
 	falseProof.Indices[0] = 1
 
-	proven, err = merkletree.VerifyMultiProof(data, false, falseProof, bT.mT.Root())
+	proven, err = merkletree.VerifyMultiProof(data, false, falseProof, bT.MT.Root())
 	if err != nil {
 		t.Fatal(err)
 	}

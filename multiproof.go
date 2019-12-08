@@ -29,7 +29,7 @@ func (t *BloomTree) GenerateMultiProof(elemIndices []int) (*merkletree.MultiProo
 		}
 	}
 
-	proof, err := t.mT.GenerateMultiProof(data)
+	proof, err := t.MT.GenerateMultiProof(data)
 	return proof, data, err
 }
 
@@ -60,6 +60,6 @@ func (t *BloomTree) GenerateAbsenceProof(index int) (*merkletree.MultiProof, [][
 		data = append(data, stringElement(t.state[i+1][0], t.state[i+1][1]))
 	}
 
-	proof, err := t.mT.GenerateMultiProof(data)
+	proof, err := t.MT.GenerateMultiProof(data)
 	return proof, data, err
 }
