@@ -2,9 +2,7 @@ module github.com/labbloom/SBT
 
 go 1.13
 
-replace (
-	github.com/wealdtech/go-merkletree => github.com/labbloom/go-merkletree v0.0.0-20191127145501-89d9cf347209
-)
+replace github.com/wealdtech/go-merkletree => github.com/labbloom/go-merkletree v0.0.0-20191127145501-89d9cf347209
 
 require (
 	github.com/labbloom/go-merkletree v0.0.0-20191127145501-89d9cf347209

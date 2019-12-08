@@ -23,8 +23,8 @@ func TestVerifyPresence(t *testing.T) {
 	b.Set(33)
 	b.Set(37)
 
-	bT := newBloomTree(b)
-	proof1, data, err := bT.generateMultiProof([]int{8, 13, 33})
+	bT := NewBloomTree(b)
+	proof1, data, err := bT.GenerateMultiProof([]int{8, 13, 33})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func TestVerifyPresence(t *testing.T) {
 		t.Fatal("multiproof should be true")
 	}
 
-	proof2, data, err := bT.generateMultiProof([]int{0, 26, 28})
+	proof2, data, err := bT.GenerateMultiProof([]int{0, 26, 28})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,12 +52,12 @@ func TestVerifyPresence(t *testing.T) {
 		t.Fatal("multiproof should be true")
 	}
 
-	_, _, err = bT.generateMultiProof([]int{0, 7, 28})
+	_, _, err = bT.GenerateMultiProof([]int{0, 7, 28})
 	if err == nil {
 		t.Fatal("element is not present")
 	}
 
-	falseProof, data, err := bT.generateMultiProof([]int{0, 26, 28})
+	falseProof, data, err := bT.GenerateMultiProof([]int{0, 26, 28})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,8 +89,8 @@ func TestVerifyAbsence(t *testing.T) {
 	b.Set(33)
 	b.Set(37)
 
-	bT := newBloomTree(b)
-	proof1, data, err := bT.generateAbsenceProof(16)
+	bT := NewBloomTree(b)
+	proof1, data, err := bT.GenerateAbsenceProof(16)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestVerifyAbsence(t *testing.T) {
 		t.Fatal("multiproof should be true")
 	}
 
-	proof2, data, err := bT.generateAbsenceProof(36)
+	proof2, data, err := bT.GenerateAbsenceProof(36)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,12 +118,12 @@ func TestVerifyAbsence(t *testing.T) {
 		t.Fatal("multiproof should be true")
 	}
 
-	_, _, err = bT.generateAbsenceProof(1)
+	_, _, err = bT.GenerateAbsenceProof(1)
 	if err == nil {
 		t.Fatal("element is present")
 	}
 
-	falseProof, data, err := bT.generateAbsenceProof(22)
+	falseProof, data, err := bT.GenerateAbsenceProof(22)
 	if err != nil {
 		t.Fatal(err)
 	}

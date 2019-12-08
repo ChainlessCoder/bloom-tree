@@ -8,13 +8,13 @@ import (
 	"github.com/willf/bitset"
 )
 
-// bloomTree represents sparse bloom tree, field intState
+// BloomTree represents sparse bloom tree, field intState
 // represents the int state of bloom filter that is the slice of integers
 // containing the number of consecutive 1's and the negative value of number
 // of consecutive 0's. Field indices the slice of integers containing the
 // indices where the bloom filter changes bits. Filed mT represents
 // merkle tree build from element combination of two slices of integers.
-type bloomTree struct {
+type BloomTree struct {
 	state [][2]int
 	mT    *merkletree.MerkleTree
 }
@@ -71,11 +71,11 @@ func merkleTree(elements [][]byte) *merkletree.MerkleTree {
 
 // to build bloom tree is needed only a bloom filter, everything is done
 // in this function.
-func newBloomTree(b *bitset.BitSet) *bloomTree {
+func NewBloomTree(b *bitset.BitSet) *BloomTree {
 	state := bit2int(b)
 	mT := merkleTree(elementsOfTree(state))
 
-	return &bloomTree{
+	return &BloomTree{
 		mT:    mT,
 		state: state,
 	}

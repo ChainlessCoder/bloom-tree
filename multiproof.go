@@ -6,10 +6,10 @@ import (
 	"github.com/labbloom/go-merkletree"
 )
 
-// generateMultiProof returns the proof needed for given indices, it returns
+// GenerateMultiProof returns the proof needed for given indices, it returns
 // the proof, elements in the tree, and error if element is not present in
 // the bloom filter, that is if in the corresponding position it has value 0.
-func (t *bloomTree) generateMultiProof(elemIndices []int) (*merkletree.MultiProof, [][]byte, error) {
+func (t *BloomTree) GenerateMultiProof(elemIndices []int) (*merkletree.MultiProof, [][]byte, error) {
 	data := make([][]byte, len(elemIndices))
 	for i, v := range elemIndices {
 		for j, vv := range t.state {
@@ -33,10 +33,10 @@ func (t *bloomTree) generateMultiProof(elemIndices []int) (*merkletree.MultiProo
 	return proof, data, err
 }
 
-// generateAbsenceProof returns the proof of absence for given index. To prove the absence only one
+// GenerateAbsenceProof returns the proof of absence for given index. To prove the absence only one
 // index is needed, it returns the proof, elements in the tree, and error if element maybe is present
 // that is if the value of bloom filter in the given index is 1.
-func (t *bloomTree) generateAbsenceProof(index int) (*merkletree.MultiProof, [][]byte, error) {
+func (t *BloomTree) GenerateAbsenceProof(index int) (*merkletree.MultiProof, [][]byte, error) {
 	var data [][]byte
 
 	var i int
