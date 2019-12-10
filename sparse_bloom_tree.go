@@ -32,10 +32,10 @@ func bit2int(b *bitset.BitSet) [][2]int {
 		for i := uint(1); i < length; i++ {
 			if b.Test(i) {
 				if len(ret) == 0 {
-					ret = append(ret, [2]int{1, 0})
+					ret = append(ret, [2]int{1, int(i)})
 				} else {
 					if b.Test(i - 1) {
-						ret[len(ret)-1][0] += 1
+						ret[len(ret)-1][0] ++
 					} else {
 						ret = append(ret, [2]int{1, int(i)})
 					}
