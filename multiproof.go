@@ -4,9 +4,7 @@ import (
 	"github.com/labbloom/go-merkletree"
 )
 
-// GenerateMultiProof returns the proof needed for given indices, it returns
-// the proof, elements in the tree, and error if element is not present in
-// the bloom filter, that is if in the corresponding position it has value 0.
+// generatePresenceProof returns the proof needed for the given indices, the elements for the multiproof, as well as an error. 
 func (t *BloomTree) generatePresenceProof(elemIndices []int) (*merkletree.MultiProof, [][]byte, error) {
 	data := make([][]byte, len(elemIndices))
 	for i, v := range elemIndices {
@@ -24,9 +22,8 @@ func (t *BloomTree) generatePresenceProof(elemIndices []int) (*merkletree.MultiP
 	return proof, data, err
 }
 
-// GenerateAbsenceProof returns the proof of absence for given index. To prove the absence only one
-// index is needed, it returns the proof, elements in the tree, and error if element maybe is present
-// that is if the value of bloom filter in the given index is 1.
+// generateAbsenceProof returns the proof of absence for given index. To prove the absence, only one
+// index is needed. generateAbsenceProof returns the proof, the elements for the multiproof, as well as an error. 
 func (t *BloomTree) generateAbsenceProof(index int) (*merkletree.MultiProof, [][]byte, error) {
 	var data [][]byte
 	var i int
@@ -41,7 +38,7 @@ func (t *BloomTree) generateAbsenceProof(index int) (*merkletree.MultiProof, [][
 	return proof, data, err
 }
 
-
+// SbtMultiProof returns the multiproof to verify the presence, or absence of an element in a bloom filter.
 func (t *BloomTree) SbtMultiProof(elem []byte) (*merkletree.MultiProof, [][]byte, bool, error) {
 	indices, present := t.bf.Proof(elem)
 	if present {
