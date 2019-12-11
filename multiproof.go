@@ -2,7 +2,6 @@ package sbt
 
 import (
 	"github.com/labbloom/go-merkletree"
-	"github.com/labbloom/DBF"
 )
 
 // GenerateMultiProof returns the proof needed for given indices, it returns
@@ -43,13 +42,18 @@ func (t *BloomTree) generateAbsenceProof(index int) (*merkletree.MultiProof, [][
 }
 
 
-func (t *BloomTree) SbtMultiProof(dbf *DBF.DistBF, elem []byte) (*merkletree.MultiProof, [][]byte, bool) {
-	indices, present := dbf.Proof(elem)
+func (t *BloomTree) SbtMultiProof(elem []byte) (*merkletree.MultiProof, [][]byte, bool, error) {
+	indices, present := t.bf.Proof(elem)
 	if present {
-		proof, data, _ := t.generatePresenceProof(indices) 
-		return proof, data, true
-	} else {
-		proof, data, _ := t.generateAbsenceProof(indices[0])
-		return proof, data, false
+		proof, data, err := t.generatePresenceProof(indices) 
+		if err != nil {
+			return &merkletree.MultiProof{}, nil, true, err
+		}
+		return proof, data, true, err
+	} 
+	proof, data, err := t.generateAbsenceProof(indices[0])
+	if err != nil {
+		return &merkletree.MultiProof{}, nil, false, err
 	}
+	return proof, data, false, err
 }
