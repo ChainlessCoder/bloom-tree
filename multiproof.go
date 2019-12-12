@@ -12,8 +12,8 @@ func (t *BloomTree) generatePresenceProof(elemIndices []int) (*merkletree.MultiP
 			if v == vv[1] {
 				data[i] = stringElement(t.state[j][0], t.state[j][1])
 				break
-			} else if v < vv[1] && j != 0 {
-				data[i] = stringElement(t.state[j-1][0], t.state[j-1][1])
+			} else if v > vv[1] && v < vv[1]+vv[0] {
+				data[i] = stringElement(t.state[j][0], t.state[j][1])
 				break
 			}
 		}
