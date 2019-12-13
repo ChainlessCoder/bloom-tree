@@ -2,140 +2,241 @@ package sbt
 
 import (
 	"testing"
-
-	"github.com/labbloom/go-merkletree"
-
-	"github.com/willf/bitset"
+	"fmt"
+	"bytes"
+	"github.com/labbloom/DBF"
 )
 
-func TestVerifyPresence(t *testing.T) {
-	b := bitset.New(37)
-	b.Set(0)
-	b.Set(1)
-	b.Set(8)
-	b.Set(13)
-	b.Set(18)
-	b.Set(19)
-	b.Set(20)
-	b.Set(26)
-	b.Set(28)
-	b.Set(32)
-	b.Set(33)
-	b.Set(37)
 
-	bT := NewBloomTree(b)
-	proof1, data, err := bT.GenerateMultiProof([]int{8, 13, 33})
+func TestGeneratePresenceProof(t *testing.T) {
+	
+	// Scenario - Check behavior given simple DBF (every positive integer is 1)
+	dbf := DBF.NewDbf(200, 0.1, []byte("seed"))
+	indices := []int{4,7,11}
+	dbf.SetIndices(indices)
+	bT := NewBloomTree(dbf)
+	proof, data, err := bT.generatePresenceProof(indices)
+	// Check err
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Check data
+	for ind, v := range data {
+		d := []byte(fmt.Sprintf("1,%d", indices[ind]))
+		res := bytes.Compare(d,v)
+		if  res != 0 {
+			t.Fatalf("expected %v, got %v", d, v)
+		}
+	}
+	// Check proof
+	if proof == nil {
+		t.Fatal("Multiproof was not able to get computed")
+	}
 
-	proven, err := merkletree.VerifyMultiProof(data, false, proof1, bT.MT.Root())
+	// Scenario - Check behavior given more complex DBF (some positive integers are 2)
+	dbf = DBF.NewDbf(200, 0.1, []byte("seed"))
+	allIndices := []int{4,5,7,8,10,11}
+	indices = []int{4,7,11}
+	dbf.SetIndices(allIndices)
+	bT = NewBloomTree(dbf)
+	proof, data, err = bT.generatePresenceProof(indices)
+	// Check err
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if !proven {
-		t.Fatal("multiproof should be true")
+	// Check data
+	expectedIndices := []int{4, 7, 10}
+	for ind, v := range data {
+		d := []byte(fmt.Sprintf("2,%d", expectedIndices[ind]))
+		res := bytes.Compare(d,v)
+		if  res != 0 {
+			t.Fatalf("expected %v, got %v", d, v)
+		}
+	}
+	// Check proof
+	if proof == nil {
+		t.Fatal("Multiproof was not able to get computed")
 	}
 
-	proof2, data, err := bT.GenerateMultiProof([]int{0, 26, 28})
+	// Scenario - Check behavior given consecutive ones at the beginning and end of DBF
+	dbf = DBF.NewDbf(200, 0.1, []byte("seed"))
+	allIndices = []int{0,1,2,956,957,958}
+	indices = []int{1,958}
+	dbf.SetIndices(allIndices)
+	bT = NewBloomTree(dbf)
+	proof, data, err = bT.generatePresenceProof(indices)
+	// Check err
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	proven, err = merkletree.VerifyMultiProof(data, false, proof2, bT.MT.Root())
-	if err != nil {
-		t.Fatal(err)
+	// Check data
+	expectedIndices = []int{0,956}
+	for ind, v := range data {
+		d := []byte(fmt.Sprintf("3,%d", expectedIndices[ind]))
+		res := bytes.Compare(d,v)
+		if  res != 0 {
+			t.Fatalf("expected %v, got %v", d, v)
+		}
+	}
+	// Check proof
+	if proof == nil {
+		t.Fatal("Multiproof was not able to get computed")
 	}
 
-	if !proven {
-		t.Fatal("multiproof should be true")
-	}
-
-	_, _, err = bT.GenerateMultiProof([]int{0, 7, 28})
+	// Scenario - Check behavior given indices for a missing element
+	dbf = DBF.NewDbf(200, 0.1, []byte("seed"))
+	allIndices = []int{0,1,2,956,957,958}
+	indices = []int{1,955}
+	dbf.SetIndices(allIndices)
+	bT = NewBloomTree(dbf)
+	proof, data, err = bT.generatePresenceProof(indices)
+	// Check err
 	if err == nil {
-		t.Fatal("element is not present")
-	}
-
-	falseProof, data, err := bT.GenerateMultiProof([]int{0, 26, 28})
-	if err != nil {
 		t.Fatal(err)
 	}
-
-	falseProof.Indices[0] = 1
-
-	proven, err = merkletree.VerifyMultiProof(data, false, falseProof, bT.MT.Root())
-	if err != nil {
-		t.Fatal(err)
+	// Check data
+	d := []byte(fmt.Sprintf("3,%d", 0))
+	res := bytes.Compare(d,data[0])
+	if  res != 0 {
+		t.Fatalf("expected %v, got %v", d, data[0])
+	}
+	// Check proof
+	if proof != nil {
+		t.Fatal("Multiproof was not able to get computed")
 	}
 
-	if proven {
-		t.Fatal("multiproof should not be true")
-	}
 }
 
-func TestVerifyAbsence(t *testing.T) {
-	b := bitset.New(37)
-	b.Set(0)
-	b.Set(1)
-	b.Set(8)
-	b.Set(13)
-	b.Set(18)
-	b.Set(19)
-	b.Set(20)
-	b.Set(26)
-	b.Set(28)
-	b.Set(32)
-	b.Set(33)
-	b.Set(37)
-
-	bT := NewBloomTree(b)
-	proof1, data, err := bT.GenerateAbsenceProof(16)
+func TestGenerateAbsenceProof(t *testing.T) {
+	// Scenario - Check behavior given a missing value at the beggining of the tree
+	dbf := DBF.NewDbf(200, 0.1, []byte("seed"))
+	allIndices := []int{5, 10, 100}
+	index := 2
+	dbf.SetIndices(allIndices)
+	bT := NewBloomTree(dbf)
+	proof, data, err := bT.generateAbsenceProof(index)
+	// Check err
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Check data
+	d := []byte(fmt.Sprintf("1,%d", allIndices[0]))
+	res := bytes.Compare(d,data[0])
+	if  res != 0 {
+		t.Fatalf("expected %v, got %v", d, data[0])
+	}
+	
+	// Check proof
+	if proof == nil {
+		t.Fatal("Multiproof was not able to get computed")
+	}
 
-	proven, err := merkletree.VerifyMultiProof(data, false, proof1, bT.MT.Root())
+	// Scenario - Check behavior given a missing value at the end of the tree
+	dbf = DBF.NewDbf(200, 0.1, []byte("seed"))
+	allIndices = []int{5, 10, 100}
+	index = 200
+	dbf.SetIndices(allIndices)
+	bT = NewBloomTree(dbf)
+	proof, data, err = bT.generateAbsenceProof(index)
+	// Check err
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if !proven {
-		t.Fatal("multiproof should be true")
+	// Check data
+	d = []byte(fmt.Sprintf("1,%d", 100))
+	res = bytes.Compare(d,data[0])
+	if  res != 0 {
+		t.Fatalf("expected %v, got %v", d, data[0])
+	}
+	// Check proof
+	if proof == nil {
+		t.Fatal("Multiproof was not able to get computed")
 	}
 
-	proof2, data, err := bT.GenerateAbsenceProof(36)
+	// Scenario - Check behavior given a missing value somewhere in the middle of the tree
+	dbf = DBF.NewDbf(200, 0.1, []byte("seed"))
+	allIndices = []int{5, 10, 100}
+	index = 8
+	dbf.SetIndices(allIndices)
+	bT = NewBloomTree(dbf)
+	proof, data, err = bT.generateAbsenceProof(index)
+	// Check err
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Check data
+	expectedIndices := []int{5,10}
+	for ind, v := range data {
+		d = []byte(fmt.Sprintf("1,%d", expectedIndices[ind]))
+		res = bytes.Compare(d,v)
+		if  res != 0 {
+			t.Fatalf("expected %v, got %v", d, v)
+		}
+	}
+	// Check proof
+	if proof == nil {
+		t.Fatal("Multiproof was not able to get computed")
+	}
+	
+}
 
-	proven, err = merkletree.VerifyMultiProof(data, false, proof2, bT.MT.Root())
+
+func TestSbtMultiProof(t *testing.T) {
+	// Scenario - Check behavior given an element that is present in the DBF
+	dbf := DBF.NewDbf(200, 0.2, []byte("seed"))
+	element := []byte("something")
+	dbf.Add(element)
+	bT := NewBloomTree(dbf)
+	proof, data, presence, err := bT.SbtMultiProof(element)
+	// Check err
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if !proven {
-		t.Fatal("multiproof should be true")
+	// Check presence / absence
+	if presence != true {
+		t.Fatal(err)
+	}
+	// Check data
+	expectedIndices, _ := dbf.Proof(element)
+	for ind, v := range data {
+		d := []byte(fmt.Sprintf("1,%d", expectedIndices[ind]))
+		res := bytes.Compare(d,v)
+		if  res != 0 {
+			t.Fatalf("expected %v, got %v", d, v)
+		}
+	}
+	// Check proof
+	if proof == nil {
+		t.Fatal("Multiproof was not able to get computed")
 	}
 
-	_, _, err = bT.GenerateAbsenceProof(1)
-	if err == nil {
-		t.Fatal("element is present")
-	}
-
-	falseProof, data, err := bT.GenerateAbsenceProof(22)
+	// Scenario - Check behavior given an element that is absent in the DBF
+	dbf = DBF.NewDbf(200, 0.2, []byte("seed"))
+	element = []byte("something")
+	element1 := []byte("something else")
+	dbf.Add(element)
+	bT = NewBloomTree(dbf)
+	proof, data, presence, err = bT.SbtMultiProof(element1)
+	// Check err
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	falseProof.Indices[0] = 1
-
-	proven, err = merkletree.VerifyMultiProof(data, false, falseProof, bT.MT.Root())
-	if err != nil {
+	// Check presence / absence
+	if presence == true {
 		t.Fatal(err)
 	}
-
-	if proven {
-		t.Fatal("multiproof should not be true")
+	// Check data
+	expectedIndices = []int{247, 484}
+	for ind, v := range data {
+		d := []byte(fmt.Sprintf("1,%d", expectedIndices[ind]))
+		res := bytes.Compare(d,v)
+		if  res != 0 {
+			t.Fatalf("expected %v, got %v", d, v)
+		}
 	}
+	// Check proof
+	if proof == nil {
+		t.Fatal("Multiproof was not able to get computed")
+	}
+
 }
