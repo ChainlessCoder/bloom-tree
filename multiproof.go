@@ -26,12 +26,18 @@ func (t *BloomTree) generatePresenceProof(elemIndices []int) (*merkletree.MultiP
 // index is needed. generateAbsenceProof returns the proof, the elements for the multiproof, as well as an error. 
 func (t *BloomTree) generateAbsenceProof(index int) (*merkletree.MultiProof, [][]byte, error) {
 	var data [][]byte
-	var i int
-	if i == 0 || i == len(t.state) {
-		data = append(data, stringElement(t.state[i][0], t.state[i][1]))
+	if index < t.state[0][1] {
+		data = append(data, stringElement(t.state[0][0], t.state[0][1]))
+	} else if index > t.state[len(t.state)-1][1] {
+		data = append(data, stringElement(t.state[len(t.state)-1][0], t.state[len(t.state)-1][1]))
 	} else {
-		data = append(data, stringElement(t.state[i-1][0], t.state[i+1][1]))
-		data = append(data, stringElement(t.state[i+1][0], t.state[i+1][1]))
+		for i, elm := range t.state {
+			if elm[1] > index {
+				data = append(data, stringElement(t.state[i-1][0], t.state[i-1][1]))
+				data = append(data, stringElement(elm[0], elm[1]))
+				break
+			}
+		}
 	}
 
 	proof, err := t.MT.GenerateMultiProof(data)
