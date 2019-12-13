@@ -4,9 +4,7 @@ import (
 	"testing"
 	"fmt"
 	"bytes"
-	//"github.com/labbloom/go-merkletree"
 	"github.com/labbloom/DBF"
-	//"github.com/willf/bitset"
 )
 
 

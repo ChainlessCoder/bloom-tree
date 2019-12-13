@@ -5,34 +5,23 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/willf/bitset"
+	"github.com/labbloom/DBF"
 )
 
 func TestBit2Int(t *testing.T) {
-	b := bitset.New(37)
-	b.Set(0)
-	b.Set(1)
-	b.Set(8)
-	b.Set(13)
-	b.Set(18)
-	b.Set(19)
-	b.Set(20)
-	b.Set(26)
-	b.Set(28)
-	b.Set(32)
-	b.Set(33)
-	b.Set(37)
-	var tests = []struct {
-		b             *bitset.BitSet
-		expectedState [][2]int
-	}{
-		{b: b, expectedState: [][2]int{{2, 0}, {1, 8}, {1, 13}, {3, 18}, {1, 26}, {1, 28}, {2, 32}, {1, 37}}},
-	}
+	// Scenario - Check behavior given simple DBF (every positive integer is 1)
+	dbf := DBF.NewDbf(100, 0.1, []byte("seed"))
+	indices := []int{4,7,11}
+	dbf.SetIndices(indices)
+	b2i := bit2int(dbf.BitArray())
+	expected := [][2]int{{1,4}, {1,7}, {1,11}}
+	assert.Equal(t, expected, b2i, fmt.Sprintf("The 2D integer array is wrong"))
 
-	for i, test := range tests {
-		state := bit2int(test.b)
-		assert.Equal(t, test.expectedState, state, fmt.Sprintf("expected states to be the same at test %d", i))
-
-	}
+	// Scenario - Check behavior given more complex DBF (some positive integers can be greater than 1)
+	dbf = DBF.NewDbf(100, 0.1, []byte("seed"))
+	indices = []int{4,5,7,10,11,12}
+	dbf.SetIndices(indices)
+	b2i = bit2int(dbf.BitArray())
+	expected = [][2]int{{2,4}, {1,7}, {3,10}}
+	assert.Equal(t, expected, b2i, fmt.Sprintf("The 2D integer array is wrong"))
 }

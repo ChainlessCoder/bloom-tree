@@ -58,7 +58,7 @@ func bit2int(b *bitset.BitSet) [][2]int {
 	return ret
 }
 
-// elementsOfTree prepares elements to build the merkle tree, combination
+// elementsOfTree prepares the elements to build the merkle tree, combination
 // of element is done using stringElement function.
 func elementsOfTree(state [][2]int) [][]byte {
 	length := len(state)
@@ -72,7 +72,7 @@ func elementsOfTree(state [][2]int) [][]byte {
 	return elements
 }
 
-// merkleTree builds merkle tree with given element
+// merkleTree builds merkle tree for a given bloom filter integer array
 func merkleTree(elements [][]byte) *merkletree.MerkleTree {
 	mT, err := merkletree.New(elements)
 	if err != nil {
@@ -81,8 +81,7 @@ func merkleTree(elements [][]byte) *merkletree.MerkleTree {
 	return mT
 }
 
-// to build bloom tree is needed only a bloom filter, everything is done
-// in this function.
+// NewBloomTree creates a sparse bloom tree.
 func NewBloomTree(b BloomFilter) *BloomTree {
 	state := bit2int(b.BitArray())
 	mT := merkleTree(elementsOfTree(state))
