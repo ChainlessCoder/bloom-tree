@@ -9,7 +9,7 @@ func (h *HashFunc256) Hash(elem []byte) []byte {
 }
 
 // HashLength returns the length of the used hash
-func (h *HashFunc256) HashLength(elem []byte) int {
+func (h *HashFunc256) HashLength() int {
 	return 256
 }
 
@@ -23,7 +23,7 @@ func (h *HashFunc512) Hash(elem []byte) {
 }
 
 // HashLength returns the length of the used hash
-func (h *HashFunc512) HashLength(elem []byte) int {
+func (h *HashFunc512) HashLength() int {
 	return 512
 }
 
