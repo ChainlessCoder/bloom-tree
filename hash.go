@@ -1,14 +1,19 @@
 package bloomtree
 
+import(
+	"crypto/sha256"
+	"crypto/sha512"
+)
+
 // HashFunc256 is a hashing function
 type HashFunc256 func(...[]byte) []byte
 
 // Hash returns a 256 bit hash
-func (h *HashFunc256) Hash(elem []byte) []byte {
+func (h *HashFunc256) Hash(elem []byte) [32]byte {
 	return sha256.Sum256(elem)
 }
 
-// HashLength returns the length of the used hash
+// HashLength returns the bit length of the used hash
 func (h *HashFunc256) HashLength() int {
 	return 256
 }
@@ -18,11 +23,11 @@ func (h *HashFunc256) HashLength() int {
 type HashFunc512 func(...[]byte) []byte
 
 // Hash returns a 512 bit hash
-func (h *HashFunc512) Hash(elem []byte) {
+func (h *HashFunc512) Hash(elem []byte)  [64]byte {
 	return sha512.Sum512(elem)
 }
 
-// HashLength returns the length of the used hash
+// HashLength returns the bit length of the used hash
 func (h *HashFunc512) HashLength() int {
 	return 512
 }
