@@ -1,43 +1,20 @@
 package bloomtree
 
 import(
-	"crypto/sha256"
 	"crypto/sha512"
+	"encoding/binary"
 )
 
-// HashFunc256 is a hashing function
-type HashFunc256 func(...[]byte) []byte
-
 // Hash returns a 256 bit hash
-func (h *HashFunc256) Hash(elem []byte) [32]byte {
-	return sha256.Sum256(elem)
+func hashChild(elem1, elem2 [32]byte) [32]byte {
+	var elem []byte
+	elem = append(elem, elem1[:]...)
+	elem = append(elem, elem2[:]...)
+	return sha512.Sum512_256(elem)
 }
 
-// HashLength returns the bit length of the used hash
-func (h *HashFunc256) HashLength() int {
-	return 256
-}
-
-
-// HashFunc512 is a hashing function
-type HashFunc512 func(...[]byte) []byte
-
-// Hash returns a 512 bit hash
-func (h *HashFunc512) Hash(elem []byte)  [64]byte {
-	return sha512.Sum512(elem)
-}
-
-// HashLength returns the bit length of the used hash
-func (h *HashFunc512) HashLength() int {
-	return 512
-}
-
-
-// HashType defines the interface that must be supplied by hash functions
-type HashType interface {
-	// Hash calculates the hash of a given input
-	Hash(...[]byte) []byte
-
-	// HashLength provides the length of the hash
-	HashLength() int
+func hashLeaf(element uint64) [sha512.Size256]byte {
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, element)
+	return sha512.Sum512_256(b)
 }
