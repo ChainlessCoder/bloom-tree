@@ -18,3 +18,11 @@ func hashLeaf(element uint64) [sha512.Size256]byte {
 	binary.LittleEndian.PutUint64(b, element)
 	return sha512.Sum512_256(b)
 }
+
+/*
+func H(element uint64) [sha512.Size256]byte {
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, element)
+	return sha512.Sum512_256(b)
+}
+*/
