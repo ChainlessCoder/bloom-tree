@@ -1,4 +1,4 @@
-module github.com/labbloom/SBT
+module github.com/labbloom/BloomTree
 
 go 1.13
 

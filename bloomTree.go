@@ -49,13 +49,13 @@ func NewBloomTree(b BloomFilter) (*BloomTree, error) {
 func order(a,b uint64) (uint64,uint64) {
 	if a > b {
 		return b,a
-	} else {
-		return a,b
 	}
+	return a,b
+	
 }
 
 
-func (bt *BloomTree) GenerateProof(indices []uint64) ([][32]byte, error) {
+func (bt *BloomTree) generateProof(indices []uint64) ([][32]byte, error) {
 	var hashes [][32]byte
 	var hashIndices []uint64
 	var hashIndicesBucket []int
@@ -104,6 +104,23 @@ func (bt *BloomTree) GenerateProof(indices []uint64) ([][32]byte, error) {
 	return hashes, nil
 }
 
+
+// GenerateCompactMultiProof returns a compact multiproof to verify the presence, or absence of an element in a bloom tree.
+func (bt *BloomTree) GenerateCompactMultiProof(elem []byte) (bool, [][32]byte, error) {
+	indices, present := bt.bf.Proof(elem)
+	if present {
+		proof, err := bt.generateProof(indices)
+		if err != nil {
+			return present, nil, err
+		}
+		return present, proof, nil
+	} 
+	proof, err := bt.generateProof([]uint64{indices})
+	if err != nil {
+		return present, nil, err
+	}
+	return present, proof, nil
+}
 
 /*
 
@@ -192,16 +209,6 @@ func (bt *BloomTree) GenerateCompactMultiProof(elementIndices []uint64) ([][32]b
 
 // Root returns the Bloom Tree root
 func (bt *BloomTree) Root() [32]byte {
-	return bt.nodes[1]
+	return bt.nodes[len(bt.nodes)-1]
 }
 
-func (bt *BloomTree) height() int {
-	bf := bt.bf.BitArray()
-	return int(math.Log2(math.Exp2(math.Ceil(math.Log2(float64(len(bf.Bytes())))))))
-}
-
-// leafNum returns the number of leaves in the tree, before applying the padding
-func (bt *BloomTree) LeafNum() uint64 {
-	bf := bt.bf.BitArray()
-	return uint64(len(bf.Bytes()))
-}

@@ -1,27 +1,9 @@
 package bloomtree
 
 import (
-	"math"
-	"errors"
+	
 )
 
-// MerkleProof returns the hashes for a given chunk, up to a specified height.
-// index is the index of a bloom filter chunk. intersection is the desired height.
-// If intersection is set to 0, MerkleProof returns all the hashes up to the root.
-func (bt *BloomTree) MerkleProof(index uint64, intersection int) ([][32]byte, error) {
-	if bt.leafNum() < index {
-		return nil, errors.New("index out of range")
-	}
-	proofLen := bt.height() - intersection
-	hashes := make([][32]byte, proofLen)
-	cur := 0
-	minI := uint64(math.Pow(2, float64(intersection+1))) - 1
-	for i := index + uint64(len(bt.nodes)/2); i > minI; i /= 2 {
-		hashes[cur] = bt.nodes[i^1]
-		cur++
-	}
-	return hashes, nil
-}
 
 /*
 // generatePresenceProof returns the proof needed for the given indices, the elements for the multiproof, as well as an error. 
