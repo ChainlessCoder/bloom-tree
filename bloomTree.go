@@ -14,7 +14,7 @@ import (
 // If the element is not in the bloom filter, it returns:
 // index, false (where "index" is one of the element indices that have a zero value in the bloom filter).
 type BloomFilter interface {
-	Proof([]byte) ([]int, bool)
+	Proof([]byte) ([]uint64, bool)
 	BitArray() *bitset.BitSet
 }
 
@@ -104,22 +104,36 @@ func (bt *BloomTree) generateProof(indices []uint64) ([][32]byte, error) {
 	return hashes, nil
 }
 
+func (bt *BloomTree) getChunksAndIndices(indices []uint64) ([]uint64, []uint64){
+	chunks := make([]uint64, len(indices))
+	chunkIndices := make([]uint64, len(indices))
+	bf := bt.bf.BitArray()
+	bfAsInt := bf.Bytes()
+	for i, v := range indices {
+		index := uint64(math.Ceil(float64((chunkSize() * 8)) / float64(v)) - 1)
+		chunks[i] = bfAsInt[index]
+		chunkIndices[i] = index
+	}
+	return chunks, chunkIndices
+}
+
 
 // GenerateCompactMultiProof returns a compact multiproof to verify the presence, or absence of an element in a bloom tree.
-func (bt *BloomTree) GenerateCompactMultiProof(elem []byte) (bool, [][32]byte, error) {
+func (bt *BloomTree) GenerateCompactMultiProof(elem []byte) (bool, []uint64, [][32]byte, error) {
 	indices, present := bt.bf.Proof(elem)
+	chunks, chunkIndices := bt.getChunksAndIndices(indices)
 	if present {
-		proof, err := bt.generateProof(indices)
+		proof, err := bt.generateProof(chunkIndices)
 		if err != nil {
-			return present, nil, err
+			return present, nil, nil, err
 		}
-		return present, proof, nil
+		return present, chunks, proof, nil
 	} 
-	proof, err := bt.generateProof([]uint64{indices})
+	proof, err := bt.generateProof(indices)
 	if err != nil {
-		return present, nil, err
+		return present, nil, nil, err
 	}
-	return present, proof, nil
+	return present, chunks, proof, nil
 }
 
 /*
@@ -212,3 +226,6 @@ func (bt *BloomTree) Root() [32]byte {
 	return bt.nodes[len(bt.nodes)-1]
 }
 
+func (bt *BloomTree) Size() int {
+	return len(bt.nodes)
+}
