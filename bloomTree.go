@@ -128,107 +128,18 @@ func (bt *BloomTree) GenerateCompactMultiProof(elem []byte) (*CompactMultiProof,
 	if present {
 		proof, err := bt.generateProof(chunkIndices)
 		if err != nil {
-			return newCompactMultiProof(present, nil, nil), err
+			return newCompactMultiProof(nil, nil), err
 		}
-		return newCompactMultiProof(present, chunks, proof), nil
+		return newCompactMultiProof(chunks, proof), nil
 	} 
 	proof, err := bt.generateProof(indices)
 	if err != nil {
-		return newCompactMultiProof(present, nil, nil), err
+		return newCompactMultiProof(nil, nil), err
 	}
-	return newCompactMultiProof(present, chunks, proof), nil
+	return newCompactMultiProof(chunks, proof), nil
 }
-
-/*
-
-// MerkleProof returns the hashes for a given chunk, up to a specified height.
-// index is the index of a bloom filter chunk. intersection is the desired height.
-// If intersection is set to 0, MerkleProof returns all the hashes up to the root.
-func (bt *BloomTree) generateMerkleProof(index uint64, intersection int) ([][32]byte, error) {
-	if bt.leafNum() < index {
-		return nil, errors.New("index out of range")
-	}
-	proofLen := bt.height() - intersection
-	hashes := make([][32]byte, proofLen)
-	cur := 0
-	minI := uint64(math.Pow(2, float64(intersection+1))) - 1
-	for i := index + uint64(len(bt.nodes)/2); i > minI; i /= 2 {
-		hashes[cur] = bt.nodes[i^1]
-		cur++
-	}
-	return hashes, nil
-}
-
-// GenerateMultiProof generates the proof for multiple pieces of data.
-func (bt *BloomTree) GenerateCompactMultiProof(elementIndices []uint64) ([][32]byte, error) {//(*MultiProof, error) {
-	hashes := make([][][32]byte, len(elementIndices))
-	indices := make([]uint64, len(elementIndices))
-
-	// Step 1: generate individual proofs
-	for i := range elementIndices {
-		tmpProof, err := bt.generateMerkleProof(elementIndices[i], 0)
-		if err != nil {
-			return nil, err
-		}
-		hashes[i] = tmpProof.Hashes
-		indices[i] = tmpProof.Index
-	}
-
-	// Step 2: combine the hashes across all proofs and highlight all calculated indices
-	proofHashes := make(map[uint64][32]byte)
-	calculatedIndices := make([]bool, len(bt.nodes))
-	for i, index := range indices {
-		hashNum := 0
-		for j := uint64(index + uint64(math.Ceil(float64(len(bt.nodes))/2))); j > 1; j /= 2 {
-			proofHashes[j^1] = hashes[i][hashNum]
-			calculatedIndices[j] = true
-			hashNum++
-		}
-	}
-
-	// Step 3: remove any hashes that can be calculated
-	for _, index := range indices {
-		for j := uint64(index + uint64(math.Ceil(float64(len(t.nodes))/2))); j > 1; j /= 2 {
-			if calculatedIndices[j^1] {
-				delete(proofHashes, j^1)
-			}
-		}
-	}
-	// 4 prepare compact multiproof order
-	compactMultiProof := make([][32]byte, len(proofHashes))
-	keysmap := make(map[uint64]uint64)
-	keys := make([]int, len(proofHashes))
-	height := int(math.Log2(float64(len(bt.nodes)/2)))
-	nums := make([]uint64, height)
-	n,s := uint64(len(bt.nodes)/2), uint64(0)
-	for i := 1; i < height; i ++ {
-		nums[height-i-1] = n + s
-		s += n
-		n /= 2
-	}
-	nn := 0
-	for k := range proofHashes {
-		new := math.Exp2(math.Floor(math.Log2(float64(k)))) 
-		newind := nums[int((math.Log2(new)))-1] + uint64(math.Abs(float64(new) - float64(k)))
-		keys[nn] = int(newind)
-		keysmap[newind] = k
-		nn ++
-	}
-	sort.Ints(keys)
-	for i, v := range keys {
-		compactMultiProof[i] = proofHashes[keysmap[uint64(v)]]
-	}	
-	return compactMultiProof, nil
-}
-
-*/
-
 
 // Root returns the Bloom Tree root
 func (bt *BloomTree) Root() [32]byte {
 	return bt.nodes[len(bt.nodes)-1]
-}
-
-func (bt *BloomTree) Size() int {
-	return len(bt.nodes)
 }

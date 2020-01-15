@@ -1,12 +1,10 @@
 package bloomtree
 
 import (
-	
+	"github.com/willf/bitset"
 )
 
 type CompactMultiProof struct {
-	// Present is the kind of multiproof. A Presence (true) merkle multiproof, or Absence (false) standard merkle proof 
-	Present bool 
 	// Chunks are the leaves of the bloom tree, i.e. the bloom filter values for given parts of the bloom filter.
 	Chunks []uint64 
 	// Proof are the hashes needed to reconstruct the bloom tree root.
@@ -14,77 +12,36 @@ type CompactMultiProof struct {
 }
 
 // newMultiProof generates a Merkle proof
-func newCompactMultiProof(present bool, chunks []uint64, proof [][32]byte) *CompactMultiProof {
+func newCompactMultiProof(chunks []uint64, proof [][32]byte) *CompactMultiProof {
 	return &CompactMultiProof{
-		Present:  present,
 		Chunks:  chunks,
 		Proof: proof,
 	}
 }
 
-/*
-func (bt *BloomTree) VerifyCompactMultiProof(multiproof *CompactMultiProof, root [32]byte) (bool, error) {
-	var hashes [][32]byte
-	var hashIndices []uint64
-	var hashIndicesBucket []int
-	var newIndices []uint64
-	prevIndices := indices
-	indMap := make(map[[2]uint64][2]uint64)
-	leavesPerLayer := uint64((len(bt.nodes) + 1))
-	currentLayer := uint64(0)
-	height := int(math.Log2(float64(len(bt.nodes)/2)))
-	for i:=0; i <= height; i ++ {
-		if len(newIndices) != 0 {
-			for j:=0; j<len(newIndices); j += 2 {
-				prevIndices = append(prevIndices, newIndices[j]/2)
-			}
-			newIndices = nil
-		}
-		for _, val := range prevIndices {
-			neighbor := val^1
-			a,b := order(val, neighbor)
-			pair := [2]uint64{a,b}
-			if _, ok := indMap[pair]; ok {
-				indMap[pair] = [2]uint64{1,0}
-			} else {
-				indMap[pair] = [2]uint64{0, neighbor + currentLayer}
-			}
-		}
-		for k,v := range indMap {
-			if v[0] == 0 {
-				hashIndicesBucket = append(hashIndicesBucket, int(v[1]))
-			}
-			newIndices = append(newIndices, k[0], k[1])
-		}
-		sort.Ints(hashIndicesBucket)
-		for _, elem := range hashIndicesBucket {
-			hashIndices = append(hashIndices, uint64(elem))
-		}
-		indMap = make(map[[2]uint64][2]uint64)
-		hashIndicesBucket = nil
-		leavesPerLayer /= 2
-		currentLayer += leavesPerLayer
-		prevIndices = nil
+func checkProofType(indices, chunks []uint64) bool {
+	if len(indices) == len(chunks) {
+		return true
 	}
-	for _, hashInd := range hashIndices {
-		hashes = append(hashes, bt.nodes[hashInd])
-	}
-	return hashes, nil
+	return false
 }
 
-func (bt *BloomTree) getChunksAndIndices(indices []uint64) ([]uint64, []uint64){
-	chunks := make([]uint64, len(indices))
-	chunkIndices := make([]uint64, len(indices))
-	bf := bt.bf.BitArray()
-	bfAsInt := bf.Bytes()
-	for i, v := range indices {
-		index := uint64(math.Ceil(float64((chunkSize() * 8)) / float64(v)) - 1)
-		chunks[i] = bfAsInt[index]
-		chunkIndices[i] = index
-	}
-	return chunks, chunkIndices
+func checkChunk(elementIndices, chunks []uint64) {
+
 }
-*/
+
+func (bt *BloomTree) verifyPresence(elementIndices []uint64, chunks []uint64, proof [][32]byte, root [32]byte) (bool, error) {
+	
+}
+
+
+func (bt *BloomTree) verifyAbsence(multiproof *CompactMultiProof, root [32]byte) (bool, error) {
+
+}
+
+func (bt *BloomTree) VerifyCompactMultiProof(multiproof *CompactMultiProof, root [32]byte) (bool, error) {
+
+}
 
 /*
 // generatePresenceProof returns the proof needed for the given indices, the elements for the multiproof, as well as an error. 
