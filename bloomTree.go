@@ -119,21 +119,21 @@ func (bt *BloomTree) getChunksAndIndices(indices []uint64) ([]uint64, []uint64){
 
 
 // GenerateCompactMultiProof returns a compact multiproof to verify the presence, or absence of an element in a bloom tree.
-func (bt *BloomTree) GenerateCompactMultiProof(elem []byte) (bool, []uint64, [][32]byte, error) {
+func (bt *BloomTree) GenerateCompactMultiProof(elem []byte) (*CompactMultiProof, error) {
 	indices, present := bt.bf.Proof(elem)
 	chunks, chunkIndices := bt.getChunksAndIndices(indices)
 	if present {
 		proof, err := bt.generateProof(chunkIndices)
 		if err != nil {
-			return present, nil, nil, err
+			return newCompactMultiProof(present, nil, nil), err
 		}
-		return present, chunks, proof, nil
+		return newCompactMultiProof(present, chunks, proof), nil
 	} 
 	proof, err := bt.generateProof(indices)
 	if err != nil {
-		return present, nil, nil, err
+		return newCompactMultiProof(present, nil, nil), err
 	}
-	return present, chunks, proof, nil
+	return newCompactMultiProof(present, chunks, proof), nil
 }
 
 /*
