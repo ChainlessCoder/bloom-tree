@@ -34,8 +34,11 @@ func NewBloomTree(b BloomFilter) (*BloomTree, error) {
 	}
 	leafNum := int(math.Exp2(math.Ceil(math.Log2(float64(len(bfAsInt))))))
 	nodes := make([][32]byte, (leafNum * 2)-1)
-	for i:=0; i < len(bfAsInt); i++ {
-		nodes[i] = hashLeaf(bfAsInt[i])
+	for i,v := range bfAsInt {
+		nodes[i] = hashLeaf(v,uint64(i))
+	}
+	for i:=len(bfAsInt); i < len(nodes) - len(bfAsInt); i ++ {
+		nodes[i] = hashPadding(nodes[i], i)
 	}
 	for i := leafNum-1; i < (leafNum * 2)-1; i++ {
 		nodes[i] = hashChild(nodes[i-(leafNum-1)], nodes[i+1-(leafNum-1)])
@@ -110,7 +113,7 @@ func (bt *BloomTree) getChunksAndIndices(indices []uint64) ([]uint64, []uint64){
 	bf := bt.bf.BitArray()
 	bfAsInt := bf.Bytes()
 	for i, v := range indices {
-		index := uint64(math.Ceil(float64((chunkSize() * 8)) / float64(v)) - 1)
+		index := uint64(math.Floor(float64(v) / float64((chunkSize() * 8))))
 		chunks[i] = bfAsInt[index]
 		chunkIndices[i] = index
 	}

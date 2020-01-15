@@ -13,10 +13,24 @@ func hashChild(elem1, elem2 [32]byte) [32]byte {
 	return sha512.Sum512_256(elem)
 }
 
-func hashLeaf(element uint64) [sha512.Size256]byte {
-	b := make([]byte, 8)
+func hashLeaf(element, index uint64) [sha512.Size256]byte {
+	var elem []byte
+	a := make([]byte, chunkSize())
+	binary.LittleEndian.PutUint64(a, index)
+	b := make([]byte, chunkSize())
 	binary.LittleEndian.PutUint64(b, element)
-	return sha512.Sum512_256(b)
+	elem = append(elem, a[:]...)
+	elem = append(elem, b[:]...)
+	return sha512.Sum512_256(elem)
+}
+
+func hashPadding(element [32]byte, index int) [sha512.Size256]byte {
+	var elem []byte
+	a := make([]byte, chunkSize())
+	binary.LittleEndian.PutUint64(a, uint64(index))
+	elem = append(elem, element[:]...)
+	elem = append(elem, a[:]...)
+	return sha512.Sum512_256(elem)
 }
 
 func chunkSize() int {
