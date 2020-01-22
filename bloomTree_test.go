@@ -15,6 +15,15 @@ func TestNewBloomTree(t *testing.T) {
 			elements: [][]byte{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
 			hashAt:   [3]int{0, 1, 16},
 		},
+		{
+			elements: [][]byte{{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13},
+				{14}, {15}, {16}},
+			hashAt: [3]int{2, 3, 17},
+		},
+		{
+			elements: [][]byte{{0}, {1}},
+			hashAt:   [3]int{28, 29, 30},
+		},
 	}
 
 	for _, test := range tests {
