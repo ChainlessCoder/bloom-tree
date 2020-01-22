@@ -46,7 +46,7 @@ func NewBloomTree(b BloomFilter) (*BloomTree, error) {
 		nodes[i] = hashLeaf(uint64(0), uint64(i))
 	}
 	for i := leafNum; i < len(nodes); i++ {
-		nodes[i] = hashChild(nodes[i-leafNum], nodes[i+1-leafNum])
+		nodes[i] = hashChild(nodes[2*(i-leafNum)], nodes[2*(i-leafNum)+1])
 	} 
 	return &BloomTree{
 		bf: b,
