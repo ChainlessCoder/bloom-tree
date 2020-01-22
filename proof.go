@@ -68,14 +68,13 @@ func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMulti
 	proof := multiproof.Proof
 	blueNodes := make([][32]byte, len(multiproof.Chunks))
 	prevIndices := chunkIndices
-	indMap := make(map[uint64][2]int)
+	indMap := make(map[uint64]int)
 	leavesPerLayer := uint64((len(bt.nodes) + 1))
 	currentLayer := uint64(0)
 	height := int(math.Log2(float64(len(bt.nodes)/2)))
 	for i, v := range multiproof.Chunks {
 		blueNodes[i] = hashLeaf(v, prevIndices[i])
 	}
-	fmt.Println("hi1")
 	for i:=0; i <= height; i ++ {
 		if len(newIndices) != 0 {
 			for j:=0; j<len(newIndices); j += 2 {
@@ -83,42 +82,38 @@ func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMulti
 			}
 			newIndices = nil
 		}
-		fmt.Println(prevIndices)
 		for _, val := range prevIndices {
 			neighbor := val^1
 			if _, ok := indMap[val+neighbor]; ok {
-				if indMap[val+neighbor][0] != int(val) {
-					indMap[val+neighbor] = [2]int{-1, 0}
+				if indMap[val+neighbor] != int(val) {
+					indMap[val+neighbor] = -1
 				}
 			} else {
-				indMap[val+neighbor] = [2]int{int(val), int(val)}
+				indMap[val+neighbor] = int(val)
 				pairs = append(pairs, int(val+neighbor))
 			}
 		}
 		for k,v := range indMap {
-			a,b := order(uint64(v[1]), k - uint64(v[1]))
+			a,b := order(uint64(v), k - uint64(v))
 			newIndices = append(newIndices, a, b)
 		}
-		fmt.Println(indMap)
 		sort.Ints(pairs)
-		fmt.Println(pairs)
 		blueNodeNum, proofNum := 0, 0
 		for _,v := range pairs {
 			value := uint64(v)
-			if indMap[value][0] == -1 {
+			if indMap[value] == -1 {
 				newBlueNodes = append(newBlueNodes,hashChild(blueNodes[blueNodeNum], blueNodes[blueNodeNum+1]))
 				blueNodeNum += 2
 			} else {
-				newBlueNodes = append(newBlueNodes,determineOrder2Hash(indMap[value][1],v-indMap[value][1], blueNodes[blueNodeNum], proof[proofNum]))
+				newBlueNodes = append(newBlueNodes,determineOrder2Hash(indMap[value],v-indMap[value], blueNodes[blueNodeNum], proof[proofNum]))
 				blueNodeNum ++
 				proofNum ++
 			}
 		}
-		fmt.Println("hi2")
 		blueNodes = newBlueNodes
 		newBlueNodes = nil
 		blueNodeNum = 0
-		indMap = make(map[uint64][2]int)
+		indMap = make(map[uint64]int)
 		pairs = nil
 		leavesPerLayer /= 2
 		currentLayer += leavesPerLayer
