@@ -2,10 +2,8 @@ package bloomtree
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"sort"
-
 	"github.com/willf/bitset"
 )
 
@@ -60,7 +58,7 @@ func determineOrder2Hash(ind1, indNeighbor int, h1, h2 [32]byte) [32]byte {
 	return hashChild(h1, h2)
 }
 
-func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMultiProof, root [32]byte) ([][32]byte, error) {
+func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMultiProof, root [32]byte) (bool, error) {
 	var (
 		pairs        []int
 		newIndices   []uint64
@@ -142,7 +140,10 @@ func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMulti
 		prevIndices = nil
 	}
 
-	return blueNodes, nil
+	if blueNodes[0] == bt.Root() {
+		return true, nil
+	}
+	return false, nil
 }
 
 func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multiproof *CompactMultiProof, root [32]byte) (bool, error) {
@@ -161,8 +162,7 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 		if err != nil {
 			return true, err
 		}
-		fmt.Println(verify)
-		return true, nil //verify, err
+		return verify, nil //verify, err
 	}
 	present := checkChunkPresence(elemIndices, chunks)
 	if present == true {
@@ -172,6 +172,5 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 	if err != nil {
 		return false, err
 	}
-	fmt.Println(verify)
-	return false, nil //verify, err
+	return verify, nil //verify, err
 }
