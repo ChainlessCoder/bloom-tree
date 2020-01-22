@@ -16,6 +16,8 @@ import (
 type BloomFilter interface {
 	Proof([]byte) ([]uint64, bool)
 	BitArray() *bitset.BitSet
+	MapElementToBF([]byte, []byte) []uint
+	NumOfHashes() uint
 }
 
 // BloomTree represents the bloom tree struct.
@@ -27,26 +29,33 @@ type BloomTree struct {
 
 // NewBloomTree creates a new bloom tree.
 func NewBloomTree(b BloomFilter) (*BloomTree, error) {
+	if b.NumOfHashes() == 1 {
+		return nil, errors.New("parameter k of the bloom filter must be greater than 1")
+	}
 	bf := b.BitArray()
 	bfAsInt := bf.Bytes() 
 	if len(bfAsInt) == 0 {
-		return nil, errors.New("tree must have at least 1 element")
+		return nil, errors.New("tree must have at least 1 leaf")
 	}
 	leafNum := int(math.Exp2(math.Ceil(math.Log2(float64(len(bfAsInt))))))
 	nodes := make([][32]byte, (leafNum * 2)-1)
 	for i,v := range bfAsInt {
 		nodes[i] = hashLeaf(v,uint64(i))
 	}
-	for i:=len(bfAsInt); i < len(nodes) - len(bfAsInt); i ++ {
-		nodes[i] = hashPadding(nodes[i], i)
+	for i:=len(bfAsInt); i < leafNum; i ++ {
+		nodes[i] = hashLeaf(uint64(0), uint64(i))
 	}
-	for i := leafNum-1; i < (leafNum * 2)-1; i++ {
-		nodes[i] = hashChild(nodes[i-(leafNum-1)], nodes[i+1-(leafNum-1)])
+	for i := leafNum; i < len(nodes); i++ {
+		nodes[i] = hashChild(nodes[i-leafNum], nodes[i+1-leafNum])
 	} 
 	return &BloomTree{
 		bf: b,
 		nodes: nodes,
 	}, nil
+}
+
+func (bt *BloomTree) GetBloomFilter() BloomFilter {
+	return bt.bf
 }
 
 func order(a,b uint64) (uint64,uint64) {
@@ -57,14 +66,13 @@ func order(a,b uint64) (uint64,uint64) {
 	
 }
 
-
 func (bt *BloomTree) generateProof(indices []uint64) ([][32]byte, error) {
 	var hashes [][32]byte
 	var hashIndices []uint64
 	var hashIndicesBucket []int
 	var newIndices []uint64
 	prevIndices := indices
-	indMap := make(map[[2]uint64][2]uint64)
+	indMap := make(map[[2]uint64][2]int)
 	leavesPerLayer := uint64((len(bt.nodes) + 1))
 	currentLayer := uint64(0)
 	height := int(math.Log2(float64(len(bt.nodes)/2)))
@@ -80,14 +88,16 @@ func (bt *BloomTree) generateProof(indices []uint64) ([][32]byte, error) {
 			a,b := order(val, neighbor)
 			pair := [2]uint64{a,b}
 			if _, ok := indMap[pair]; ok {
-				indMap[pair] = [2]uint64{1,0}
+				if indMap[pair][0] != int(val) {
+					indMap[pair] = [2]int{-1,0}
+				}
 			} else {
-				indMap[pair] = [2]uint64{0, neighbor + currentLayer}
+				indMap[pair] = [2]int{int(val), int(neighbor + currentLayer)}
 			}
 		}
 		for k,v := range indMap {
-			if v[0] == 0 {
-				hashIndicesBucket = append(hashIndicesBucket, int(v[1]))
+			if v[0] != -1 {
+				hashIndicesBucket = append(hashIndicesBucket, v[1])
 			}
 			newIndices = append(newIndices, k[0], k[1])
 		}
@@ -95,7 +105,7 @@ func (bt *BloomTree) generateProof(indices []uint64) ([][32]byte, error) {
 		for _, elem := range hashIndicesBucket {
 			hashIndices = append(hashIndices, uint64(elem))
 		}
-		indMap = make(map[[2]uint64][2]uint64)
+		indMap = make(map[[2]uint64][2]int)
 		hashIndicesBucket = nil
 		leavesPerLayer /= 2
 		currentLayer += leavesPerLayer
@@ -113,26 +123,32 @@ func (bt *BloomTree) getChunksAndIndices(indices []uint64) ([]uint64, []uint64){
 	bf := bt.bf.BitArray()
 	bfAsInt := bf.Bytes()
 	for i, v := range indices {
-		index := uint64(math.Floor(float64(v) / float64((chunkSize() * 8))))
+		index := uint64(math.Floor(float64(v) / float64((chunkSize() ))))
 		chunks[i] = bfAsInt[index]
 		chunkIndices[i] = index
 	}
 	return chunks, chunkIndices
 }
 
+func (bt *BloomTree) Perkohsisht(indices []uint64) ([]uint64, []uint64) {
+	return bt.getChunksAndIndices(indices)
+}
+
+func (bt *BloomTree) Perkohsisht2() int {
+	return int(math.Exp2(math.Ceil(math.Log2(float64(len(bt.bf.BitArray().Bytes()))))))
+}
 
 // GenerateCompactMultiProof returns a compact multiproof to verify the presence, or absence of an element in a bloom tree.
 func (bt *BloomTree) GenerateCompactMultiProof(elem []byte) (*CompactMultiProof, error) {
 	indices, present := bt.bf.Proof(elem)
 	chunks, chunkIndices := bt.getChunksAndIndices(indices)
+	proof, err := bt.generateProof(chunkIndices)
 	if present {
-		proof, err := bt.generateProof(chunkIndices)
 		if err != nil {
 			return newCompactMultiProof(nil, nil), err
 		}
 		return newCompactMultiProof(chunks, proof), nil
 	} 
-	proof, err := bt.generateProof(indices)
 	if err != nil {
 		return newCompactMultiProof(nil, nil), err
 	}

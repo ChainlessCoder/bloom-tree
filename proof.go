@@ -2,6 +2,10 @@ package bloomtree
 
 import (
 	"github.com/willf/bitset"
+	"math"
+	"errors"
+	"sort"
+	"fmt"
 )
 
 type CompactMultiProof struct {
@@ -19,98 +23,137 @@ func newCompactMultiProof(chunks []uint64, proof [][32]byte) *CompactMultiProof 
 	}
 }
 
-func checkProofType(indices, chunks []uint64) bool {
-	if len(indices) == len(chunks) {
+func checkProofType(elemIndices []uint, chunks []uint64) bool {
+	if len(elemIndices) == len(chunks) {
 		return true
 	}
 	return false
 }
 
-func checkChunk(elementIndices, chunks []uint64) {
-
-}
-
-func (bt *BloomTree) verifyPresence(elementIndices []uint64, chunks []uint64, proof [][32]byte, root [32]byte) (bool, error) {
-	
-}
-
-
-func (bt *BloomTree) verifyAbsence(multiproof *CompactMultiProof, root [32]byte) (bool, error) {
-
-}
-
-func (bt *BloomTree) VerifyCompactMultiProof(multiproof *CompactMultiProof, root [32]byte) (bool, error) {
-
-}
-
-/*
-// generatePresenceProof returns the proof needed for the given indices, the elements for the multiproof, as well as an error. 
-func (bt *BloomTree) generatePresenceProof(elemIndices []int) (*merkletree.MultiProof, [][]byte, error) {
-	chunkIndices := make([]int, len(elemIndices))
-	kChunks := make([]uint64, len)(elementIndices)
-	hashes := make([][][32]byte, len(elemIndices))
-	// Step 1: determine chunks and chunk indices, as well as generate individual proofs
+func checkChunkPresence(elemIndices []uint, chunks []uint64) bool {
 	for i, v := range elemIndices {
-		chunkIndices[i] = math.Floor(v / chunkSize())
-		kChunks[i] = bt.bf.BitArray().Bytes()[chunkIndices[i]]
-		tmpProof, err := t.MerkleProof(chunkIndices[i], 0)
-		if err != nil {
-			return nil, err
+		chunkIndex := uint(math.Floor(float64(v) / float64((chunkSize() ))))
+		indexInsideChunk := (v - (chunkIndex * uint(chunkSize()) ))
+		chunkBitSet := bitset.From([]uint64{chunks[i]})
+		present := chunkBitSet.Test(indexInsideChunk)
+		if present != true {
+			return false
 		}
-		hashes[i] = tmpProof
 	}
-	// Step 2: combine the hashes across all proofs and highlight all calculated indices
-	
-
-
-
-	proof, err := t.MT.GenerateMultiProof(data)
-	return proof, data, err
+	return true
 }
-*/
-/*
-// generateAbsenceProof returns the proof of absence for given index. To prove the absence, only one
-// index is needed. generateAbsenceProof returns the proof, the elements for the multiproof, as well as an error. 
-func (t *BloomTree) generateAbsenceProof(index int) (*merkletree.MultiProof, [][]byte, error) {
-	var data [][]byte
-	if index < t.state[0][1] {
-		data = append(data, stringElement(t.state[0][0], t.state[0][1]))
-	} else if index > t.state[len(t.state)-1][1] {
-		data = append(data, stringElement(t.state[len(t.state)-1][0], t.state[len(t.state)-1][1]))
-	} else {
-		for i, elm := range t.state {
-			if elm[1] > index {
-				data = append(data, stringElement(t.state[i-1][0], t.state[i-1][1]))
-				data = append(data, stringElement(elm[0], elm[1]))
-				break
+
+func computeChunkIndices(elemIndices []uint) []uint64{
+	chunkIndices := make([]uint64, len(elemIndices))
+	for i, v := range elemIndices {
+		index := uint64(math.Floor(float64(v) / float64((chunkSize() ))))
+		chunkIndices[i] = uint64(index)
+	}
+	return chunkIndices
+}
+
+func determineOrder2Hash(ind1, indNeighbor int, h1, h2 [32]byte) [32]byte {
+	if ind1 > indNeighbor {
+		return hashChild(h2,h1)
+	}
+	return hashChild(h1,h2)
+}
+
+func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMultiProof, root [32]byte) ([][32]byte, error) {
+	var (
+		pairs []int
+		newIndices []uint64
+		newBlueNodes [][32]byte
+	)
+	proof := multiproof.Proof
+	blueNodes := make([][32]byte, len(multiproof.Chunks))
+	prevIndices := chunkIndices
+	indMap := make(map[uint64][2]int)
+	leavesPerLayer := uint64((len(bt.nodes) + 1))
+	currentLayer := uint64(0)
+	height := int(math.Log2(float64(len(bt.nodes)/2)))
+	for i, v := range multiproof.Chunks {
+		blueNodes[i] = hashLeaf(v, prevIndices[i])
+	}
+	fmt.Println("hi1")
+	for i:=0; i <= height; i ++ {
+		if len(newIndices) != 0 {
+			for j:=0; j<len(newIndices); j += 2 {
+				prevIndices = append(prevIndices, newIndices[j]/2)
+			}
+			newIndices = nil
+		}
+		fmt.Println(prevIndices)
+		for _, val := range prevIndices {
+			neighbor := val^1
+			if _, ok := indMap[val+neighbor]; ok {
+				if indMap[val+neighbor][0] != int(val) {
+					indMap[val+neighbor] = [2]int{-1, 0}
+				}
+			} else {
+				indMap[val+neighbor] = [2]int{int(val), int(val)}
+				pairs = append(pairs, int(val+neighbor))
 			}
 		}
-	}
-
-	proof, err := t.MT.GenerateMultiProof(data)
-	return proof, data, err
-}
-
-// NewBloomTreeProof creates a multi proof for a given element
-func NewBloomTreeProof(b BloomFilter, elementIndices []int) []byte {
-	indices, present := t.bf.Proof(elem)
-	if present {
-		proof, data, err := t.generatePresenceProof(indices) 
-		if err != nil {
-			return &merkletree.MultiProof{}, nil, true, err
+		for k,v := range indMap {
+			a,b := order(uint64(v[1]), k - uint64(v[1]))
+			newIndices = append(newIndices, a, b)
 		}
-		return proof, data, true, err
-	} 
-	proof, data, err := t.generateAbsenceProof(indices[0])
-	if err != nil {
-		return &merkletree.MultiProof{}, nil, false, err
+		fmt.Println(indMap)
+		sort.Ints(pairs)
+		fmt.Println(pairs)
+		blueNodeNum, proofNum := 0, 0
+		for _,v := range pairs {
+			value := uint64(v)
+			if indMap[value][0] == -1 {
+				newBlueNodes = append(newBlueNodes,hashChild(blueNodes[blueNodeNum], blueNodes[blueNodeNum+1]))
+				blueNodeNum += 2
+			} else {
+				newBlueNodes = append(newBlueNodes,determineOrder2Hash(indMap[value][1],v-indMap[value][1], blueNodes[blueNodeNum], proof[proofNum]))
+				blueNodeNum ++
+				proofNum ++
+			}
+		}
+		fmt.Println("hi2")
+		blueNodes = newBlueNodes
+		newBlueNodes = nil
+		blueNodeNum = 0
+		indMap = make(map[uint64][2]int)
+		pairs = nil
+		leavesPerLayer /= 2
+		currentLayer += leavesPerLayer
+		prevIndices = nil
 	}
-	return proof, data, false, err
+	return blueNodes, nil
 }
 
 
-func VerifyProof() {
 
+func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multiproof *CompactMultiProof, root [32]byte) (bool, error) {
+	//var verify bool
+	elemIndices := bt.bf.MapElementToBF(element, seedValue)
+	chunks := multiproof.Chunks
+	chunkIndices := computeChunkIndices(elemIndices)
+	if checkProofType(elemIndices, chunks) == true {
+		present := checkChunkPresence(elemIndices, chunks)
+		if present != true {
+			return true, errors.New("The element is not inside the provided chunks for a presence proof")
+		}
+		verify, err := bt.verifyProof(chunkIndices, multiproof, root)
+		if err != nil {
+			return true, err
+		}
+		fmt.Println(verify)
+		return true,nil//verify, err
+	}
+	present := checkChunkPresence(elemIndices, chunks)
+	if present == true {
+		return false, errors.New("The element cannot be inside the provided chunk for an absence proof")
+	}
+	verify, err := bt.verifyProof(chunkIndices, multiproof, root)
+	if err != nil {
+		return false, err
+	}
+	fmt.Println(verify)
+	return false,nil//verify, err
 }
-
-*/
