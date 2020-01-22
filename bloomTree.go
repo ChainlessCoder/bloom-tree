@@ -130,13 +130,6 @@ func (bt *BloomTree) getChunksAndIndices(indices []uint64) ([]uint64, []uint64){
 	return chunks, chunkIndices
 }
 
-func (bt *BloomTree) Perkohsisht(indices []uint64) ([]uint64, []uint64) {
-	return bt.getChunksAndIndices(indices)
-}
-
-func (bt *BloomTree) Perkohsisht2() int {
-	return int(math.Exp2(math.Ceil(math.Log2(float64(len(bt.bf.BitArray().Bytes()))))))
-}
 
 // GenerateCompactMultiProof returns a compact multiproof to verify the presence, or absence of an element in a bloom tree.
 func (bt *BloomTree) GenerateCompactMultiProof(elem []byte) (*CompactMultiProof, error) {
