@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math"
 	"sort"
-
+	"fmt"
 	"github.com/willf/bitset"
 )
 
@@ -14,11 +14,14 @@ import (
 // indices, true (where "indices" is an integer array of the indices of the element in the bloom filter).
 // If the element is not in the bloom filter, it returns:
 // index, false (where "index" is one of the element indices that have a zero value in the bloom filter).
+const maxK = uint8(255)
+
 type BloomFilter interface {
 	Proof([]byte) ([]uint64, bool)
 	BitArray() *bitset.BitSet
 	MapElementToBF([]byte, []byte) []uint
 	NumOfHashes() uint
+	GetElementIndices([]byte) []uint
 }
 
 // BloomTree represents the bloom tree struct.
@@ -29,8 +32,8 @@ type BloomTree struct {
 
 // NewBloomTree creates a new bloom tree.
 func NewBloomTree(b BloomFilter) (*BloomTree, error) {
-	if b.NumOfHashes() == 1 {
-		return nil, errors.New("parameter k of the bloom filter must be greater than 1")
+	if b.NumOfHashes() == uint(maxK) {
+		return nil, fmt.Errorf("parameter k of the bloom filter must be smaller than %d", maxK)
 	}
 	bf := b.BitArray()
 	bfAsInt := bf.Bytes()
@@ -152,19 +155,23 @@ func (bt *BloomTree) getChunksAndIndicesInOrder(indices []uint64) ([]uint64, []u
 
 // GenerateCompactMultiProof returns a compact multiproof to verify the presence, or absence of an element in a bloom tree.
 func (bt *BloomTree) GenerateCompactMultiProof(elem []byte) (*CompactMultiProof, error) {
+	var proofType uint8
 	indices, present := bt.bf.Proof(elem)
 	chunks, chunkIndices := bt.getChunksAndIndicesInOrder(indices)
 	proof, err := bt.generateProof(chunkIndices)
-	if present {
-		if err != nil {
-			return newCompactMultiProof(nil, nil), err
-		}
-		return newCompactMultiProof(chunks, proof), nil
-	}
 	if err != nil {
-		return newCompactMultiProof(nil, nil), err
+		return newCompactMultiProof(nil, nil, maxK), err
 	}
-	return newCompactMultiProof(chunks, proof), nil
+	if present {
+		return newCompactMultiProof(chunks, proof, maxK), nil
+	}
+	allIndices := bt.bf.GetElementIndices(elem)
+	for i, v := range allIndices {
+		if indices[0] == uint64(v) {
+			proofType = uint8(i)
+		}
+	}
+	return newCompactMultiProof(chunks, proof, proofType), nil
 }
 
 // Root returns the Bloom Tree root

@@ -2,10 +2,8 @@ package bloomtree
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"sort"
-
 	"github.com/willf/bitset"
 )
 
@@ -14,18 +12,21 @@ type CompactMultiProof struct {
 	Chunks []uint64
 	// Proof are the hashes needed to reconstruct the bloom tree root.
 	Proof [][32]byte
+	// proofType is 255 if the element is present in the bloom filter. it returns the index of the index if the element is not present in the bloom filter.
+	proofType uint8
 }
 
 // newMultiProof generates a Merkle proof
-func newCompactMultiProof(chunks []uint64, proof [][32]byte) *CompactMultiProof {
+func newCompactMultiProof(chunks []uint64, proof [][32]byte, proofType uint8) *CompactMultiProof {
 	return &CompactMultiProof{
 		Chunks: chunks,
 		Proof:  proof,
+		proofType: proofType,
 	}
 }
 
-func checkProofType(elemIndices []uint, chunks []uint64) bool {
-	if len(elemIndices) == len(chunks) {
+func CheckProofType(proofType uint8) bool {
+	if proofType == maxK {
 		return true
 	}
 	return false
@@ -60,7 +61,7 @@ func determineOrder2Hash(ind1, indNeighbor int, h1, h2 [32]byte) [32]byte {
 	return hashChild(h1, h2)
 }
 
-func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMultiProof, root [32]byte) ([][32]byte, error) {
+func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMultiProof, root [32]byte) (bool, error) {
 	var (
 		pairs        []int
 		newIndices   []uint64
@@ -142,29 +143,35 @@ func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMulti
 		prevIndices = nil
 	}
 
-	return blueNodes, nil
+	if blueNodes[0] == bt.Root() {
+		return true, nil
+	}
+	return false, nil
 }
+
 
 func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multiproof *CompactMultiProof, root [32]byte) (bool, error) {
 	//var verify bool
 	elemIndices := bt.bf.MapElementToBF(element, seedValue)
+	elemIndicesCopy := elemIndices
 	sort.Slice(elemIndices, func(i, j int) bool { return elemIndices[i] < elemIndices[j] })
 
 	chunks := multiproof.Chunks
-	chunkIndices := computeChunkIndices(elemIndices)
-	if checkProofType(elemIndices, chunks) == true {
+	if CheckProofType(multiproof.proofType) == true {
+		chunkIndices := computeChunkIndices(elemIndices)
 		present := checkChunkPresence(elemIndices, chunks)
 		if present != true {
-			return true, errors.New("The element is not inside the provided chunks for a presence proof")
+			return false, errors.New("The element is not inside the provided chunks for a presence proof")
 		}
 		verify, err := bt.verifyProof(chunkIndices, multiproof, root)
 		if err != nil {
-			return true, err
+			return false, err
 		}
-		fmt.Println(verify)
-		return true, nil //verify, err
+		return verify, nil //verify, err
 	}
-	present := checkChunkPresence(elemIndices, chunks)
+	index := []uint{uint(elemIndicesCopy[int(multiproof.proofType)])}
+	chunkIndices := computeChunkIndices(index)
+	present := checkChunkPresence(index, chunks)
 	if present == true {
 		return false, errors.New("The element cannot be inside the provided chunk for an absence proof")
 	}
@@ -172,6 +179,5 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 	if err != nil {
 		return false, err
 	}
-	fmt.Println(verify)
-	return false, nil //verify, err
+	return verify, nil //verify, err
 }
