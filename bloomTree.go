@@ -2,9 +2,10 @@ package bloomtree
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"sort"
-	"fmt"
+
 	"github.com/willf/bitset"
 )
 
@@ -146,7 +147,7 @@ func (bt *BloomTree) getChunksAndIndicesInOrder(indices []uint64) ([]uint64, []u
 		sorted[i] = int(index)
 	}
 	sort.Ints(sorted)
-	for i,v := range sorted {
+	for i, v := range sorted {
 		chunks[i] = chunkAndIndexMap[uint64(v)]
 		chunkIndices[i] = uint64(v)
 	}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"sort"
+
 	"github.com/willf/bitset"
 )
 
@@ -19,8 +20,8 @@ type CompactMultiProof struct {
 // newMultiProof generates a Merkle proof
 func newCompactMultiProof(chunks []uint64, proof [][32]byte, proofType uint8) *CompactMultiProof {
 	return &CompactMultiProof{
-		Chunks: chunks,
-		Proof:  proof,
+		Chunks:    chunks,
+		Proof:     proof,
 		proofType: proofType,
 	}
 }
@@ -96,7 +97,6 @@ func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMulti
 		}
 	}
 	proof = uniqueProof
-
 	proofNum := 0
 	for i := 0; i <= height; i++ {
 		if len(newIndices) != 0 {
@@ -142,22 +142,19 @@ func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMulti
 		currentLayer += leavesPerLayer
 		prevIndices = nil
 	}
-
 	if blueNodes[0] == bt.Root() {
 		return true, nil
 	}
 	return false, nil
 }
 
-
 func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multiproof *CompactMultiProof, root [32]byte) (bool, error) {
 	//var verify bool
 	elemIndices := bt.bf.MapElementToBF(element, seedValue)
 	elemIndicesCopy := elemIndices
-	sort.Slice(elemIndices, func(i, j int) bool { return elemIndices[i] < elemIndices[j] })
-
 	chunks := multiproof.Chunks
 	if CheckProofType(multiproof.proofType) == true {
+		sort.Slice(elemIndices, func(i, j int) bool { return elemIndices[i] < elemIndices[j] })
 		chunkIndices := computeChunkIndices(elemIndices)
 		present := checkChunkPresence(elemIndices, chunks)
 		if present != true {
