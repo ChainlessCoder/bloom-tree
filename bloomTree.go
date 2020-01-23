@@ -133,31 +133,12 @@ func (bt *BloomTree) getChunksAndIndices(indices []uint64) ([]uint64, []uint64) 
 	return chunks, chunkIndices
 }
 
-func (bt *BloomTree) getChunksAndIndicesInOrder(indices []uint64) ([]uint64, []uint64) {
-	chunks := make([]uint64, len(indices))
-	chunkIndices := make([]uint64, len(indices))
-	chunkAndIndexMap := make(map[uint64]uint64)
-	sorted := make([]int, len(indices))
-	bf := bt.bf.BitArray()
-	bfAsInt := bf.Bytes()
-	for i, v := range indices {
-		index := uint64(math.Floor(float64(v) / float64((chunkSize()))))
-		chunkAndIndexMap[index] = bfAsInt[index]
-		sorted[i] = int(index)
-	}
-	sort.Ints(sorted)
-	for i,v := range sorted {
-		chunks[i] = chunkAndIndexMap[uint64(v)]
-		chunkIndices[i] = uint64(v)
-	}
-	return chunks, chunkIndices
-}
-
 // GenerateCompactMultiProof returns a compact multiproof to verify the presence, or absence of an element in a bloom tree.
 func (bt *BloomTree) GenerateCompactMultiProof(elem []byte) (*CompactMultiProof, error) {
 	var proofType uint8
 	indices, present := bt.bf.Proof(elem)
-	chunks, chunkIndices := bt.getChunksAndIndicesInOrder(indices)
+	sort.Slice(indices, func(i, j int) bool { return indices[i] < indices[j] })
+	chunks, chunkIndices := bt.getChunksAndIndices(indices)
 	proof, err := bt.generateProof(chunkIndices)
 	if err != nil {
 		return newCompactMultiProof(nil, nil, maxK), err
