@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/willf/bitset"
+	"fmt"
 )
 
 type CompactMultiProof struct {
@@ -164,6 +165,7 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 		if err != nil {
 			return false, err
 		}
+		fmt.Println("aha!")
 		return verify, nil //verify, err
 	}
 	index := []uint{uint(elemIndicesCopy[int(multiproof.proofType)])}
@@ -176,5 +178,6 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 	if err != nil {
 		return false, err
 	}
+	fmt.Println("hah!")
 	return verify, nil //verify, err
 }
