@@ -35,8 +35,8 @@ func CheckProofType(proofType uint8) bool {
 
 func checkChunkPresence(elemIndices []uint, chunks []uint64) bool {
 	for i, v := range elemIndices {
-		chunkIndex := uint(math.Floor(float64(v) / float64((chunkSize()))))
-		indexInsideChunk := (v - (chunkIndex * uint(chunkSize())))
+		chunkIndex := uint(math.Floor(float64(v) / float64(chunkSize())))
+		indexInsideChunk := v - (chunkIndex * uint(chunkSize()))
 		chunkBitSet := bitset.From([]uint64{chunks[i]})
 		present := chunkBitSet.Test(indexInsideChunk)
 		if present != true {
@@ -49,7 +49,7 @@ func checkChunkPresence(elemIndices []uint, chunks []uint64) bool {
 func computeChunkIndices(elemIndices []uint) []uint64 {
 	chunkIndices := make([]uint64, len(elemIndices))
 	for i, v := range elemIndices {
-		index := uint64(math.Floor(float64(v) / float64((chunkSize()))))
+		index := uint64(math.Floor(float64(v) / float64(chunkSize())))
 		chunkIndices[i] = uint64(index)
 	}
 	return chunkIndices
@@ -72,7 +72,7 @@ func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMulti
 	blueNodes := make([][32]byte, len(multiproof.Chunks))
 	prevIndices := chunkIndices
 	indMap := make(map[uint64]int)
-	leavesPerLayer := uint64((len(bt.nodes) + 1))
+	leavesPerLayer := uint64(len(bt.nodes) + 1)
 	currentLayer := uint64(0)
 	height := int(math.Log2(float64(len(bt.nodes) / 2)))
 	for i, v := range multiproof.Chunks {
@@ -163,7 +163,7 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 		chunkIndices := computeChunkIndices(elemIndices)
 		present := checkChunkPresence(elemIndices, chunks)
 		if present != true {
-			return false, errors.New("The element is not inside the provided chunks for a presence proof")
+			return false, errors.New("the element is not inside the provided chunks for a presence proof")
 		}
 		verify, err := bt.verifyProof(chunkIndices, multiproof, root)
 		if err != nil {
@@ -175,7 +175,7 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 	chunkIndices := computeChunkIndices(index)
 	present := checkChunkPresence(index, chunks)
 	if present == true {
-		return false, errors.New("The element cannot be inside the provided chunk for an absence proof")
+		return false, errors.New("the element cannot be inside the provided chunk for an absence proof")
 	}
 	verify, err := bt.verifyProof(chunkIndices, multiproof, root)
 	if err != nil {
