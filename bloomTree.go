@@ -33,7 +33,7 @@ type BloomTree struct {
 
 // NewBloomTree creates a new bloom tree.
 func NewBloomTree(b BloomFilter) (*BloomTree, error) {
-	if b.NumOfHashes() == uint(maxK) {
+	if b.NumOfHashes() >= uint(maxK) {
 		return nil, fmt.Errorf("parameter k of the bloom filter must be smaller than %d", maxK)
 	}
 	bf := b.BitArray()
