@@ -94,9 +94,9 @@ func TestPresenceProofAbsentElement(t *testing.T) {
 
 		_, err = tree.VerifyCompactMultiProof(test.element, []byte(seed), multiproof, tree.Root())
 		if err == nil {
-			t.Fatalf("expected error: %v", errors.New("The element is not inside the provided chunks for a presence proof"))
-		} else if err.Error() != errors.New("The element is not inside the provided chunks for a presence proof").Error() {
-			t.Fatalf("expected error %v, but got %v", errors.New("The element is not inside the provided chunks for a presence proof"), err)
+			t.Fatalf("expected error: %v", errors.New("the element is not inside the provided chunks for a presence proof"))
+		} else if err.Error() != errors.New("the element is not inside the provided chunks for a presence proof").Error() {
+			t.Fatalf("expected error %v, but got %v", errors.New("the element is not inside the provided chunks for a presence proof"), err)
 		}
 	}
 }
