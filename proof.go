@@ -117,8 +117,13 @@ func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMulti
 			}
 		}
 		for k, v := range indMap {
-			a, b := order(uint64(v), k-uint64(v))
-			newIndices = append(newIndices, a, b)
+			if v == -1 {
+				a, b := order((k-1)/2, (k+1)/2)
+				newIndices = append(newIndices, a, b)
+			} else {
+				a, b := order(uint64(v), k-uint64(v))
+				newIndices = append(newIndices, a, b)
+			}
 		}
 		sort.Ints(pairs)
 		blueNodeNum := 0
