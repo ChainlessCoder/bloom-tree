@@ -6,7 +6,6 @@ import (
 	"sort"
 
 	"github.com/willf/bitset"
-	"fmt"
 )
 
 type CompactMultiProof struct {
@@ -154,7 +153,7 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 	elemIndices := bt.bf.MapElementToBF(element, seedValue)
 	elemIndicesCopy := elemIndices
 	chunks := multiproof.Chunks
-	if CheckProofType(multiproof.proofType) == true {
+	if CheckProofType(multiproof.proofType) {
 		sort.Slice(elemIndices, func(i, j int) bool { return elemIndices[i] < elemIndices[j] })
 		chunkIndices := computeChunkIndices(elemIndices)
 		present := checkChunkPresence(elemIndices, chunks)
@@ -165,7 +164,6 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 		if err != nil {
 			return false, err
 		}
-		fmt.Println("aha!")
 		return verify, nil //verify, err
 	}
 	index := []uint{uint(elemIndicesCopy[int(multiproof.proofType)])}
@@ -178,6 +176,5 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 	if err != nil {
 		return false, err
 	}
-	fmt.Println("hah!")
 	return verify, nil //verify, err
 }

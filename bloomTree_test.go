@@ -28,7 +28,7 @@ func TestNewBloomTree(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		dbf := generateDBF(test.elements...)
+		dbf := generateDBF("secret seed", test.elements...)
 		tree, err := NewBloomTree(dbf)
 		if err != nil {
 			t.Fatal(err)
@@ -57,7 +57,7 @@ func TestGetBloomFilter(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		dbf := generateDBF(test.elements...)
+		dbf := generateDBF("secret seed", test.elements...)
 		tree, err := NewBloomTree(dbf)
 		if err != nil {
 			t.Fatal(err)
@@ -72,13 +72,15 @@ func TestGetBloomFilter(t *testing.T) {
 func TestBloomTreeExceedingK(t *testing.T) {
 	dbf := DBF.NewDbf(200, 1e-100, []byte("secret seed"))
 	_, err := NewBloomTree(dbf)
-	if err.Error() != fmt.Errorf("parameter k of the bloom filter must be smaller than %d", maxK).Error() {
+	if err == nil {
+		t.Fatalf("expected error %v", fmt.Errorf("parameter k of the bloom filter must be smaller than %d", maxK))
+	} else if err.Error() != fmt.Errorf("parameter k of the bloom filter must be smaller than %d", maxK).Error() {
 		t.Fatalf("expected error %v", fmt.Errorf("parameter k of the bloom filter must be smaller than %d", maxK))
 	}
 }
 
-func generateDBF(elements ...[]byte) *DBF.DistBF {
-	dbf := DBF.NewDbf(200, 0.2, []byte("secret seed"))
+func generateDBF(seed string, elements ...[]byte) *DBF.DistBF {
+	dbf := DBF.NewDbf(200, 0.2, []byte(seed))
 	for _, elem := range elements {
 		dbf.Add(elem)
 	}
