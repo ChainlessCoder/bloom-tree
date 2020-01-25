@@ -42,7 +42,7 @@ func TestPresenceProofPresentElement(t *testing.T) {
 			t.Fatal("proof type is not presence")
 		}
 
-		present, err := tree.VerifyCompactMultiProof(test.element, []byte(seed), multiproof, tree.Root())
+		present, err := VerifyCompactMultiProof(test.element, []byte(seed), multiproof, tree.Root(), tree.GetBloomFilter())
 		if err != nil {
 			t.Fatal(err)
 		} else if !present {
@@ -92,7 +92,7 @@ func TestPresenceProofAbsentElement(t *testing.T) {
 			t.Fatal("proof type is not present")
 		}
 
-		_, err = tree.VerifyCompactMultiProof(test.element, []byte(seed), multiproof, tree.Root())
+		_, err = VerifyCompactMultiProof(test.element, []byte(seed), multiproof, tree.Root(), tree.GetBloomFilter())
 		if err == nil {
 			t.Fatalf("expected error: %v", errors.New("the element is not inside the provided chunks for a presence proof"))
 		} else if err.Error() != errors.New("the element is not inside the provided chunks for a presence proof").Error() {
@@ -138,7 +138,7 @@ func TestAbsentProofAbsentElement(t *testing.T) {
 			t.Fatal("proof type is not absent")
 		}
 
-		absent, err := tree.VerifyCompactMultiProof(test.element, []byte(seed), multiproof, tree.Root())
+		absent, err := VerifyCompactMultiProof(test.element, []byte(seed), multiproof, tree.Root(), tree.GetBloomFilter())
 		if err != nil {
 			t.Fatal(err)
 		} else if !absent {
@@ -188,7 +188,7 @@ func TestAbsenceProofPresentElement(t *testing.T) {
 			t.Fatal("proof type is not absent")
 		}
 
-		_, err = tree.VerifyCompactMultiProof(test.element, []byte(seed), multiproof, tree.Root())
+		_, err = VerifyCompactMultiProof(test.element, []byte(seed), multiproof, tree.Root(), tree.GetBloomFilter())
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -62,19 +62,20 @@ func determineOrder2Hash(ind1, indNeighbor int, h1, h2 [32]byte) [32]byte {
 	return hashChild(h1, h2)
 }
 
-func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMultiProof, root [32]byte) (bool, error) {
+func verifyProof(chunkIndices []uint64, multiproof *CompactMultiProof, root [32]byte, treeLength int) (bool, error) {
 	var (
 		pairs        []int
 		newIndices   []uint64
 		newBlueNodes [][32]byte
 	)
+
 	proof := multiproof.Proof
 	blueNodes := make([][32]byte, len(multiproof.Chunks))
 	prevIndices := chunkIndices
 	indMap := make(map[uint64]int)
-	leavesPerLayer := uint64(len(bt.nodes) + 1)
+	leavesPerLayer := uint64(treeLength + 1)
 	currentLayer := uint64(0)
-	height := int(math.Log2(float64(len(bt.nodes) / 2)))
+	height := int(math.Log2(float64(treeLength / 2)))
 	for i, v := range multiproof.Chunks {
 		blueNodes[i] = hashLeaf(v, prevIndices[i])
 	}
@@ -147,15 +148,23 @@ func (bt *BloomTree) verifyProof(chunkIndices []uint64, multiproof *CompactMulti
 		currentLayer += leavesPerLayer
 		prevIndices = nil
 	}
-	if blueNodes[0] == bt.Root() {
+	if blueNodes[0] == root {
 		return true, nil
 	}
 	return false, nil
 }
 
-func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multiproof *CompactMultiProof, root [32]byte) (bool, error) {
-	//var verify bool
-	elemIndices := bt.bf.MapElementToBF(element, seedValue)
+// VerifyCompactMultiProof return whether the multi proof provided is true or false.
+// The proof type can be absence or presence
+func VerifyCompactMultiProof(element, seedValue []byte, multiproof *CompactMultiProof, root [32]byte, bf BloomFilter) (bool, error) {
+	// find length of the tree
+	dbfBytes := len(bf.BitArray().Bytes())
+	if dbfBytes == 0 {
+		return false, errors.New("there was no bloom filter provided")
+	}
+	treeLeafs := int(math.Exp2(math.Ceil(math.Log2(float64(dbfBytes)))))
+	treeLength := (treeLeafs * 2) - 1
+	elemIndices := bf.MapElementToBF(element, seedValue)
 	elemIndicesCopy := elemIndices
 	chunks := multiproof.Chunks
 	if CheckProofType(multiproof.ProofType) {
@@ -165,7 +174,7 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 		if present != true {
 			return false, errors.New("the element is not inside the provided chunks for a presence proof")
 		}
-		verify, err := bt.verifyProof(chunkIndices, multiproof, root)
+		verify, err := verifyProof(chunkIndices, multiproof, root, treeLength)
 		if err != nil {
 			return false, err
 		}
@@ -177,7 +186,7 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 	if present == true {
 		return false, errors.New("the element cannot be inside the provided chunk for an absence proof")
 	}
-	verify, err := bt.verifyProof(chunkIndices, multiproof, root)
+	verify, err := verifyProof(chunkIndices, multiproof, root, treeLength)
 	if err != nil {
 		return false, err
 	}
