@@ -38,7 +38,7 @@ func TestPresenceProofPresentElement(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if CheckProofType(multiproof.proofType) != true {
+		if CheckProofType(multiproof.ProofType) != true {
 			t.Fatal("proof type is not presence")
 		}
 
@@ -88,7 +88,7 @@ func TestPresenceProofAbsentElement(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if CheckProofType(multiproof.proofType) != true {
+		if CheckProofType(multiproof.ProofType) != true {
 			t.Fatal("proof type is not present")
 		}
 
@@ -134,7 +134,7 @@ func TestAbsentProofAbsentElement(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if CheckProofType(multiproof.proofType) != false {
+		if CheckProofType(multiproof.ProofType) != false {
 			t.Fatal("proof type is not absent")
 		}
 
@@ -184,7 +184,7 @@ func TestAbsenceProofPresentElement(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if CheckProofType(multiproof.proofType) != false {
+		if CheckProofType(multiproof.ProofType) != false {
 			t.Fatal("proof type is not absent")
 		}
 

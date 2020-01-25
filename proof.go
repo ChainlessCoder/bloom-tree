@@ -13,8 +13,8 @@ type CompactMultiProof struct {
 	Chunks []uint64
 	// Proof are the hashes needed to reconstruct the bloom tree root.
 	Proof [][32]byte
-	// proofType is 255 if the element is present in the bloom filter. it returns the index of the index if the element is not present in the bloom filter.
-	proofType uint8
+	// ProofType is 255 if the element is present in the bloom filter. it returns the index of the index if the element is not present in the bloom filter.
+	ProofType uint8
 }
 
 // newMultiProof generates a Merkle proof
@@ -22,7 +22,7 @@ func newCompactMultiProof(chunks []uint64, proof [][32]byte, proofType uint8) *C
 	return &CompactMultiProof{
 		Chunks:    chunks,
 		Proof:     proof,
-		proofType: proofType,
+		ProofType: proofType,
 	}
 }
 
@@ -158,7 +158,7 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 	elemIndices := bt.bf.MapElementToBF(element, seedValue)
 	elemIndicesCopy := elemIndices
 	chunks := multiproof.Chunks
-	if CheckProofType(multiproof.proofType) {
+	if CheckProofType(multiproof.ProofType) {
 		sort.Slice(elemIndices, func(i, j int) bool { return elemIndices[i] < elemIndices[j] })
 		chunkIndices := computeChunkIndices(elemIndices)
 		present := checkChunkPresence(elemIndices, chunks)
@@ -171,7 +171,7 @@ func (bt *BloomTree) VerifyCompactMultiProof(element, seedValue []byte, multipro
 		}
 		return verify, nil //verify, err
 	}
-	index := []uint{uint(elemIndicesCopy[int(multiproof.proofType)])}
+	index := []uint{uint(elemIndicesCopy[int(multiproof.ProofType)])}
 	chunkIndices := computeChunkIndices(index)
 	present := checkChunkPresence(index, chunks)
 	if present == true {
