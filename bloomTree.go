@@ -10,7 +10,7 @@ import (
 )
 
 // BloomFilter interface. Requires two methods:
-// The Bitarray method - returns the bloom filter as a bit array.
+// The BitArray method - returns the bloom filter as a bit array.
 // The Proof method - If the element is in the bloom filter, it returns:
 // indices, true (where "indices" is an integer array of the indices of the element in the bloom filter).
 // If the element is not in the bloom filter, it returns:
