@@ -3,7 +3,10 @@ go:
   - 1.x
 
 before_install:
-  - go get -d ./...
+  - go get -t -v ./...
 
 script:
-  - go test -v ./...
+  - go test -race -coverprofile=coverage.txt -covermode=atomic
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash) -t 7ebc982e-585c-42fa-863e-45932855ee14
