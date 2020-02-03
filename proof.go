@@ -50,7 +50,7 @@ func computeChunkIndices(elemIndices []uint) []uint64 {
 	chunkIndices := make([]uint64, len(elemIndices))
 	for i, v := range elemIndices {
 		index := uint64(math.Floor(float64(v) / float64(chunkSize())))
-		chunkIndices[i] = uint64(index)
+		chunkIndices[i] = index
 	}
 	return chunkIndices
 }
@@ -180,7 +180,7 @@ func VerifyCompactMultiProof(element, seedValue []byte, multiproof *CompactMulti
 		}
 		return verify, nil //verify, err
 	}
-	index := []uint{uint(elemIndicesCopy[int(multiproof.ProofType)])}
+	index := []uint{elemIndicesCopy[int(multiproof.ProofType)]}
 	chunkIndices := computeChunkIndices(index)
 	present := checkChunkPresence(index, chunks)
 	if present == true {

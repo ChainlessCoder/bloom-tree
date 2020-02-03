@@ -1,6 +1,6 @@
 package bloomtree
 
-import(
+import (
 	"crypto/sha512"
 	"encoding/binary"
 )
@@ -23,7 +23,6 @@ func hashLeaf(element, index uint64) [sha512.Size256]byte {
 	elem = append(elem, b[:]...)
 	return sha512.Sum512_256(elem)
 }
-
 
 func chunkSize() int {
 	return 64

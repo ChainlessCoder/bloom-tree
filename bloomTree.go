@@ -127,7 +127,7 @@ func (bt *BloomTree) getChunksAndIndices(indices []uint64) ([]uint64, []uint64) 
 	bf := bt.bf.BitArray()
 	bfAsInt := bf.Bytes()
 	for i, v := range indices {
-		index := uint64(math.Floor(float64(v) / float64((chunkSize()))))
+		index := uint64(math.Floor(float64(v) / float64(chunkSize())))
 		chunks[i] = bfAsInt[index]
 		chunkIndices[i] = index
 	}
