@@ -1,6 +1,7 @@
 package bloomtree
 
 import (
+	"crypto/sha512"
 	"errors"
 	"fmt"
 	"math"
@@ -41,12 +42,14 @@ func NewBloomTree(b BloomFilter) (*BloomTree, error) {
 	if len(bfAsInt) == 0 {
 		return nil, errors.New("tree must have at least 1 leaf")
 	}
-	leafNum := int(math.Exp2(math.Ceil(math.Log2(float64(len(bfAsInt))))))
+	leafs := make([][sha512.Size256]byte, int(math.Ceil(float64(len(bfAsInt))/float64(chunkSize/64))))
+	hashLeafs(bfAsInt, leafs)
+	leafNum := int(math.Exp2(math.Ceil(math.Log2(float64(len(leafs))))))
 	nodes := make([][32]byte, (leafNum*2)-1)
-	for i, v := range bfAsInt {
-		nodes[i] = hashLeaf(v, uint64(i))
+	for i, v := range leafs {
+		nodes[i] = v
 	}
-	for i := len(bfAsInt); i < leafNum; i++ {
+	for i := len(leafs); i < leafNum; i++ {
 		nodes[i] = hashLeaf(uint64(0), uint64(i))
 	}
 	for i := leafNum; i < len(nodes); i++ {
@@ -121,14 +124,16 @@ func (bt *BloomTree) generateProof(indices []uint64) ([][32]byte, error) {
 	return hashes, nil
 }
 
-func (bt *BloomTree) getChunksAndIndices(indices []uint64) ([]uint64, []uint64) {
-	chunks := make([]uint64, len(indices))
+func (bt *BloomTree) getChunksAndIndices(indices []uint64) ([][32]byte, []uint64) {
+	chunks := make([][32]byte, len(indices))
 	chunkIndices := make([]uint64, len(indices))
 	bf := bt.bf.BitArray()
 	bfAsInt := bf.Bytes()
+	leafs := make([][sha512.Size256]byte, int(math.Ceil(float64(len(bfAsInt))/float64(chunkSize/64))))
+	hashLeafs(bfAsInt, leafs)
 	for i, v := range indices {
-		index := uint64(math.Floor(float64(v) / float64(chunkSize())))
-		chunks[i] = bfAsInt[index]
+		index := uint64(math.Floor(float64(v) / float64(chunkSize)))
+		chunks[i] = leafs[index]
 		chunkIndices[i] = index
 	}
 	return chunks, chunkIndices
@@ -159,4 +164,18 @@ func (bt *BloomTree) GenerateCompactMultiProof(elem []byte) (*CompactMultiProof,
 // Root returns the Bloom Tree root
 func (bt *BloomTree) Root() [32]byte {
 	return bt.nodes[len(bt.nodes)-1]
+}
+
+func hashLeafs(leaf []uint64, hashes [][sha512.Size256]byte) {
+	step := uint64(chunkSize / 64)
+	index := uint64(0)
+	length := uint64(len(leaf))
+	for i := uint64(0); i < length; i += step {
+		diff := step
+		if length-i < step {
+			diff = length - i
+		}
+		hashes[index] = hashLeaf(index, leaf[i:i+diff]...)
+		index = index + 1
+	}
 }

@@ -27,7 +27,7 @@ func TestPresenceProofPresentElement(t *testing.T) {
 
 	for _, test := range tests {
 		seed := "secret seed"
-		dbf := generateDBF(seed, test.elements...)
+		dbf := generateDBF(200, seed, test.elements...)
 		tree, err := NewBloomTree(dbf)
 		if err != nil {
 			t.Fatal(err)
@@ -77,7 +77,7 @@ func TestPresenceProofAbsentElement(t *testing.T) {
 
 	for _, test := range tests {
 		seed := "secret seed"
-		dbf := generateDBF(seed, test.elements...)
+		dbf := generateDBF(200, seed, test.elements...)
 		tree, err := NewBloomTree(dbf)
 		if err != nil {
 			t.Fatal(err)
@@ -123,7 +123,7 @@ func TestAbsentProofAbsentElement(t *testing.T) {
 
 	for _, test := range tests {
 		seed := "secret seed"
-		dbf := generateDBF(seed, test.elements...)
+		dbf := generateDBF(200, seed, test.elements...)
 		tree, err := NewBloomTree(dbf)
 		if err != nil {
 			t.Fatal(err)
@@ -173,7 +173,7 @@ func TestAbsenceProofPresentElement(t *testing.T) {
 
 	for _, test := range tests {
 		seed := "secret seed"
-		dbf := generateDBF(seed, test.elements...)
+		dbf := generateDBF(200, seed, test.elements...)
 		tree, err := NewBloomTree(dbf)
 		if err != nil {
 			t.Fatal(err)
@@ -183,14 +183,14 @@ func TestAbsenceProofPresentElement(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		if CheckProofType(multiproof.ProofType) != false {
 			t.Fatal("proof type is not absent")
 		}
-
 		_, err = VerifyCompactMultiProof(test.element, []byte(seed), multiproof, tree.Root(), tree.GetBloomFilter())
-		if err != nil {
-			t.Fatal(err)
+		if err == nil {
+			t.Fatalf("expected error: %v", errors.New("the element cannot be inside the provided chunk for an absence proof"))
+		} else if err.Error() != errors.New("the element cannot be inside the provided chunk for an absence proof").Error() {
+			t.Fatalf("expected error %v, but got %v", errors.New("the element cannot be inside the provided chunk for an absence proof"), err)
 		}
 	}
 }

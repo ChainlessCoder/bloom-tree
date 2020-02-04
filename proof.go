@@ -10,7 +10,7 @@ import (
 
 type CompactMultiProof struct {
 	// Chunks are the leaves of the bloom tree, i.e. the bloom filter values for given parts of the bloom filter.
-	Chunks []uint64
+	Chunks [][32]byte
 	// Proof are the hashes needed to reconstruct the bloom tree root.
 	Proof [][32]byte
 	// ProofType is 255 if the element is present in the bloom filter. it returns the index of the index if the element is not present in the bloom filter.
@@ -18,7 +18,7 @@ type CompactMultiProof struct {
 }
 
 // newMultiProof generates a Merkle proof
-func newCompactMultiProof(chunks []uint64, proof [][32]byte, proofType uint8) *CompactMultiProof {
+func newCompactMultiProof(chunks [][32]byte, proof [][32]byte, proofType uint8) *CompactMultiProof {
 	return &CompactMultiProof{
 		Chunks:    chunks,
 		Proof:     proof,
@@ -33,12 +33,9 @@ func CheckProofType(proofType uint8) bool {
 	return false
 }
 
-func checkChunkPresence(elemIndices []uint, chunks []uint64) bool {
-	for i, v := range elemIndices {
-		chunkIndex := uint(math.Floor(float64(v) / float64(chunkSize())))
-		indexInsideChunk := v - (chunkIndex * uint(chunkSize()))
-		chunkBitSet := bitset.From([]uint64{chunks[i]})
-		present := chunkBitSet.Test(indexInsideChunk)
+func checkChunkPresence(elemIndices []uint, bf *bitset.BitSet) bool {
+	for _, v := range elemIndices {
+		present := bf.Test(v)
 		if present != true {
 			return false
 		}
@@ -49,7 +46,7 @@ func checkChunkPresence(elemIndices []uint, chunks []uint64) bool {
 func computeChunkIndices(elemIndices []uint) []uint64 {
 	chunkIndices := make([]uint64, len(elemIndices))
 	for i, v := range elemIndices {
-		index := uint64(math.Floor(float64(v) / float64(chunkSize())))
+		index := uint64(math.Floor(float64(v) / float64(chunkSize)))
 		chunkIndices[i] = index
 	}
 	return chunkIndices
@@ -70,15 +67,12 @@ func verifyProof(chunkIndices []uint64, multiproof *CompactMultiProof, root [32]
 	)
 
 	proof := multiproof.Proof
-	blueNodes := make([][32]byte, len(multiproof.Chunks))
+	blueNodes := multiproof.Chunks
 	prevIndices := chunkIndices
 	indMap := make(map[uint64]int)
 	leavesPerLayer := uint64(treeLength + 1)
 	currentLayer := uint64(0)
 	height := int(math.Log2(float64(treeLength / 2)))
-	for i, v := range multiproof.Chunks {
-		blueNodes[i] = hashLeaf(v, prevIndices[i])
-	}
 	// remove duplicates of blue nodes
 	var uniqueBlueNodes [][32]byte
 	uniqueBlueNodes = append(uniqueBlueNodes, blueNodes[0])
@@ -91,10 +85,12 @@ func verifyProof(chunkIndices []uint64, multiproof *CompactMultiProof, root [32]
 
 	// remove duplicates of proof
 	var uniqueProof [][32]byte
-	uniqueProof = append(uniqueProof, proof[0])
-	for i := 1; i < len(proof); i++ {
-		if proof[i] != proof[i-1] {
-			uniqueProof = append(uniqueProof, proof[i])
+	if len(proof) != 0 {
+		uniqueProof = append(uniqueProof, proof[0])
+		for i := 1; i < len(proof); i++ {
+			if proof[i] != proof[i-1] {
+				uniqueProof = append(uniqueProof, proof[i])
+			}
 		}
 	}
 	proof = uniqueProof
@@ -162,15 +158,14 @@ func VerifyCompactMultiProof(element, seedValue []byte, multiproof *CompactMulti
 	if dbfBytes == 0 {
 		return false, errors.New("there was no bloom filter provided")
 	}
-	treeLeafs := int(math.Exp2(math.Ceil(math.Log2(float64(dbfBytes)))))
+	treeLeafs := int(math.Exp2(math.Ceil(math.Log2(float64(dbfBytes) / float64(chunkSize/64)))))
 	treeLength := (treeLeafs * 2) - 1
 	elemIndices := bf.MapElementToBF(element, seedValue)
 	elemIndicesCopy := elemIndices
-	chunks := multiproof.Chunks
 	if CheckProofType(multiproof.ProofType) {
 		sort.Slice(elemIndices, func(i, j int) bool { return elemIndices[i] < elemIndices[j] })
 		chunkIndices := computeChunkIndices(elemIndices)
-		present := checkChunkPresence(elemIndices, chunks)
+		present := checkChunkPresence(elemIndices, bf.BitArray())
 		if present != true {
 			return false, errors.New("the element is not inside the provided chunks for a presence proof")
 		}
@@ -182,7 +177,8 @@ func VerifyCompactMultiProof(element, seedValue []byte, multiproof *CompactMulti
 	}
 	index := []uint{elemIndicesCopy[int(multiproof.ProofType)]}
 	chunkIndices := computeChunkIndices(index)
-	present := checkChunkPresence(index, chunks)
+
+	present := checkChunkPresence(index, bf.BitArray())
 	if present == true {
 		return false, errors.New("the element cannot be inside the provided chunk for an absence proof")
 	}
