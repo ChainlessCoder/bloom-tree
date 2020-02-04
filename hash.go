@@ -3,6 +3,7 @@ package bloomtree
 import (
 	"crypto/sha512"
 	"encoding/binary"
+	"errors"
 )
 
 var chunkSize = 64
@@ -31,6 +32,10 @@ func hashLeaf(index uint64, elements ...uint64) [sha512.Size256]byte {
 	return sha512.Sum512_256(elem)
 }
 
-func SetChunkSize(v int) {
+func SetChunkSize(v int) error {
+	if v % 64 != 0 {
+		return errors.New("The chunk size must be divisible by 64")
+	}
 	chunkSize = v
+	return nil
 }
