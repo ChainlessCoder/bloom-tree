@@ -16,7 +16,7 @@ go get github.com/labbloom/bloom-tree
 ```
 
 ## Usage
-`bloom-tree` generates Merkle tree from `BloomFilter` interface which implements `Proof`, `BitArray`, `MapElementToBF`, `NumOfHashes`, and `GetElementIndicies` (DBF implements all of those methods). Compact multi proofs can be generated and verified.
+`bloom-tree` generates Merkle tree from `BloomFilter` interface which implements `Proof`, `BitArray`, `MapElementToBF`, `NumOfHashes`, and `GetElementIndicies` (DBF implements all of those methods). Compact multi proofs can be generated and verified. Bloom filter is chunked and then those chunks becomes leaves of merkle tree, the chunks size must be divisible by 64 and can be set using the method SetChunkSize
 
 ## Example
 
@@ -43,7 +43,8 @@ func main() {
 	for _, d := range data {
 		dbf.Add(d)
 	}
-
+	// specify the chunk size, the value must be divisible by 64
+	bloomtree.SetChunkSize(64)
 	// Create the bloom tree
 	bt, err := bloomtree.NewBloomTree(dbf)
 	if err != nil {
