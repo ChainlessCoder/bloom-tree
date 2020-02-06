@@ -58,7 +58,7 @@ func main() {
 	if multiproof.ProofType == 255 {
 		log.Printf("the proof type for element %s is a presence proof\n", []byte("Foo"))
 	} else {
-		log.Printf("the proof type for element %s is a absence proof\n", []byte("Foo"))
+		log.Printf("the proof type for element %s is an absence proof\n", []byte("Foo"))
 	}
 
 	verified, err := bloomtree.VerifyCompactMultiProof([]byte("Foo"), seed, multiproof, bt.Root(), bt.GetBloomFilter())
