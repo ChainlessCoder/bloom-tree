@@ -25,7 +25,6 @@ package main
 import (
 	"fmt"
 	"log"
-
 	"github.com/labbloom/DBF"
 	bloomtree "github.com/labbloom/bloom-tree"
 )
@@ -55,7 +54,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-  // if ProofType is equal to 255, it is a presence proof. Any other value means that it is an absence proof.
+	// if ProofType is equal to 255, it is a presence proof. Any other value means that it is an absence proof.
 	if multiproof.ProofType == 255 {
 		log.Printf("the proof type for element %s is a presence proof\n", []byte("Foo"))
 	} else {
