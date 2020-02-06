@@ -13,8 +13,8 @@ go get github.com/labbloom/bloom-tree
 ```
 
 ## Usage
-`bloom-tree` generates Merkle tree from `BloomFilter` interface which implements `Proof`, `BitArray`, `MapElementToBF`, `NumOfHashes`, and `GetElementIndicies` (The [DBF](https://github.com/labbloom/DBF) package implements all of those methods). 
-To construct a Bloom tree, a given bloom filter gets first split into pre-defined chunks. Those chunks become then leaves of a Merkle tree. The default chunk size is 64 bytes. To change the chunk size, one must use the SetChunkSize method. Chunks must be divisible by 64. After construction of the tree, compact Merkle multiproofs can be generated and verified.
+`bloom-tree` generates a Merkle tree from a `BloomFilter` interface which implements the methods: `Proof`, `BitArray`, `MapElementToBF`, `NumOfHashes`, and `GetElementIndicies` (The [DBF](https://github.com/labbloom/DBF) package implements all of the mentioned methods). To construct a Bloom tree, a given bloom filter gets first split into pre-defined chunks. Those chunks become then leaves of a Merkle tree. The default chunk size is 64 bytes. To change the chunk size, one must use the SetChunkSize method. Chunks must be divisible by 64. 
+After construction of the tree, compact Merkle multiproofs can be generated and verified. 
 
 
 ## Example
