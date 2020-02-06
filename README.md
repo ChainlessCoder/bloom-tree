@@ -3,12 +3,9 @@
 [![codecov](https://codecov.io/gh/labbloom/bloom-tree/branch/master/graph/badge.svg?token=xLnQTvQe2W)](https://codecov.io/gh/labbloom/bloom-tree)
 
 # The Bloom Tree
-The Bloom Tree combines the idea of bloom filters with that of merkle trees. 
-In the standard bloom filter, we are interested to verify the presence, or absence of element(s) in a set. 
-In the case of the  Bloom Tree, we are interested to check and transmit the presence, or absence of an element in a secure and bandwidth efficient way to another party. 
-Instead of sending the whole bloom filter to a receiver, we only send a small multiproof.
+The Bloom tree is a probabilistic data structure that combines the idea of Bloom filters with that of Merkle trees. Bloom filters are used to verify the presence, or absence of elements in a set. In the case of the Bloom tree, we are interested to verify and transmit the presence, or absence of an element in a secure and bandwidth efficient way to another party. Instead of sending the whole Bloom filter to a receiver, a compact Merkle multiproof is sent. For more information on the distributed bloom filter, please refer to the original paper.
 
-<img src="https://github.com/labbloom/bloom-tree/blob/master/img/bloom_tree.png" class="center" width="700" height="320">
+<img src="https://github.com/labbloom/bloom-tree/blob/master/img/bloom-tree.png" class="center" width="700" height="320">
 
 ## Install
 ```sh
@@ -16,7 +13,9 @@ go get github.com/labbloom/bloom-tree
 ```
 
 ## Usage
-`bloom-tree` generates Merkle tree from `BloomFilter` interface which implements `Proof`, `BitArray`, `MapElementToBF`, `NumOfHashes`, and `GetElementIndicies` (DBF implements all of those methods). Compact multi proofs can be generated and verified. Bloom filter is chunked and then those chunks becomes leaves of merkle tree, the chunks size must be divisible by 64 and can be set using the method SetChunkSize.
+`bloom-tree` generates Merkle tree from `BloomFilter` interface which implements `Proof`, `BitArray`, `MapElementToBF`, `NumOfHashes`, and `GetElementIndicies` (The [DBF](https://github.com/labbloom/DBF) package implements all of those methods). 
+To construct a Bloom tree, a given bloom filter gets first split into pre-defined chunks. Those chunks become then leaves of a Merkle tree. The default chunk size is 64 bytes. To change the chunk size, one must use the SetChunkSize method. Chunks must be divisible by 64. After construction of the tree, compact Merkle multiproofs can be generated and verified.
+
 
 ## Example
 
@@ -51,12 +50,12 @@ func main() {
 		panic(err)
 	}
 
-	// Generate compact multi proof for element "Foo"
+	// Generate compact multiproof for element "Foo"
 	multiproof, err := bt.GenerateCompactMultiProof([]byte("Foo"))
 	if err != nil {
 		panic(err)
 	}
-  // if ProofType is equal to 255 then it is presence proof and absence proof otherwise
+  // if ProofType is equal to 255, it is a presence proof. Any other value means that it is an absence proof.
 	if multiproof.ProofType == 255 {
 		log.Printf("the proof type for element %s is a presence proof\n", []byte("Foo"))
 	} else {
