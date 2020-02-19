@@ -71,3 +71,6 @@ func main() {
 }
 
 ```
+
+## License
+[Apache-2.0](https://github.com/labbloom/bloom-tree/blob/master/License)
